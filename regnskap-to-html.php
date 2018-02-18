@@ -30,10 +30,12 @@ require_once __DIR__ . '/src/common.php';
 $json_files = array();
 $csv_files = array();
 foreach ($files as $file) {
-    if (str_ends_with('.json', strtolower($file))) {
+    if (str_ends_with(strtolower($file), '.json')
+        && !str_ends_with($file, 'account-transactions.json')
+        && !str_ends_with($file, 'config.json')) {
         $json_files[] = $file;
     }
-    if (str_ends_with('.csv', strtolower($file))) {
+    if (str_ends_with(strtolower($file), '.csv')) {
         $csv_files[] = $file;
     }
 }
@@ -77,12 +79,12 @@ if (!file_exists($statement_directory . '/config.json')) {
     exit;
 }
 
-var_dump($json_files);
-var_dump($csv_files);
-
+/**
+ * Regnskap
+ */
 class FinancialStatement {
-    /* @var AccountingTransaction[][] $transactions */
-    var $transactions = array();
+    /* @var AccountingDocument $documents */
+    var $documents = array();
 
     /**
      * @param AccountingConfig $config
@@ -94,13 +96,78 @@ class FinancialStatement {
     }
 
     public function addTransaction(AccountingTransaction $account_transaction) {
-        if (!isset($this->transactions[$account_transaction->transaction_id])) {
-            $this->transactions[$account_transaction->transaction_id] = array();
+        if (!isset($this->documents[$account_transaction->transaction_id])) {
+            $this->documents[$account_transaction->transaction_id] = new AccountingDocument();
         }
-        $this->transactions[$account_transaction->transaction_id][] = $account_transaction;
+        $this->documents[$account_transaction->transaction_id]->transactions[] = $account_transaction;
     }
 }
 
+/**
+ * Bilag
+ */
+class AccountingDocument {
+    /* @var AccountingTransaction[] $transactions */
+    var $transactions = array();
+
+    function getBankTransaction() {
+        return $this->transactions[0];
+    }
+
+    function getSumDebit() {
+        $sum_debit = 0;
+        foreach ($this->transactions as $transaction) {
+            if ($transaction->amount_debit != null) {
+                $sum_debit += $transaction->amount_debit;
+            }
+
+            if (
+                $transaction->currency_debit != null
+                && $transaction->currency_debit != 'NOK'
+            ) {
+                throw new Exception('Multi currency not implemented.');
+            }
+        }
+        return $sum_debit;
+    }
+
+    function getSumCredit() {
+        $sum_credit = 0;
+        foreach ($this->transactions as $transaction) {
+            if ($transaction->amount_credit != null) {
+                $sum_credit += $transaction->amount_credit;
+            }
+
+            if (
+                $transaction->currency_credit != null
+                && $transaction->currency_credit != 'NOK'
+            ) {
+                throw new Exception('Multi currency not implemented.');
+            }
+        }
+        return $sum_credit;
+    }
+
+    function isValid() {
+        return $this->getSumDebit() == $this->getSumCredit();
+    }
+
+    function getStatus() {
+        if (count($this->transactions) == 1) {
+            return 'Mangler mot-postering.';
+        }
+
+        if ($this->getSumDebit() != $this->getSumCredit()) {
+            return 'Mismatch på sum debit/kredit. Debit [' . $this->getSumDebit() . '] - kredit [' . $this->getSumCredit() . '] = ' . ($this->getSumDebit() - $this->getSumCredit()) .'.';
+        }
+
+        return 'OK.';
+    }
+}
+
+/**
+ * Postering
+ */
 class AccountingTransaction {
     function __construct($transaction_id, $timestamp,
                          $accounting_post_debit, $amount_debit, $currency_debit,
@@ -170,6 +237,80 @@ foreach ($api_transactions_per_account as $account_id => $api_transactions_for_a
                 $transaction->currency_credit
             ));
         }
+    }
+}
+
+// :: Geta data - JSON files from https://github.com/HNygard/renamefile-server-nodejs
+class RenameFileServerJsonFile {
+    var $date;
+    var $accounting_subject;
+    // Optional:
+    var $accounting_post;
+    // Optional:
+    var $payment_type;
+    // Optional:
+    var $account_transaction_id;
+    // Optional:
+    var $invoice_date;
+    var $amount;
+    var $currency;
+    var $comment;
+
+    /* @var RenameFileServerJsonFileTransaction[] $transactions */
+    var $transactions;
+}
+
+class RenameFileServerJsonFileTransaction {
+    var $amount;
+    var $currency;
+    var $comment;
+    var $accounting_post;
+}
+
+foreach ($json_files as $file) {
+    /* @var RenameFileServerJsonFile $obj */
+    $obj = json_decode(file_get_contents($file));
+
+    if (empty($obj->account_transaction_id)) {
+        echo file_get_contents($file);
+        var_dump($obj);
+        throw new Exception('Missing account_transaction_id. Unable to proceed.');
+    }
+
+    if (!isset($statement->documents[$obj->account_transaction_id])) {
+        var_dump($obj);
+        throw new Exception('Unknown account_transaction_id. Unable to proceed.');
+    }
+
+    $bank_transaction = $statement->documents[$obj->account_transaction_id]->getBankTransaction();
+    foreach ($obj->transactions as $file_transaction) {
+        // Old format with accounting_post on main level instead of transaction level
+        $file_transaction_accounting_post = (isset($file_transaction->accounting_post) ? $file_transaction->accounting_post : $obj->accounting_post);
+        if ($bank_transaction->amount_credit != null) {
+            $statement->addTransaction(new AccountingTransaction(
+                $obj->account_transaction_id,
+                mktime(0, 0, 0, substr($obj->date, 5, 2), substr($obj->date, 8, 2), substr($obj->date, 0, 4)),
+                $file_transaction_accounting_post,
+                str_replace(',', '.', $file_transaction->amount),
+                $file_transaction->currency,
+                null,
+                null,
+                null
+            ));
+        }
+        else {
+            $statement->addTransaction(new AccountingTransaction(
+                $obj->account_transaction_id,
+                mktime(0, 0, 0, substr($obj->date, 5, 2), substr($obj->date, 8, 2), substr($obj->date, 0, 4)),
+                null,
+                null,
+                null,
+                $file_transaction_accounting_post,
+                str_replace(',', '.', $file_transaction->amount),
+                $file_transaction->currency
+            ));
+        }
+
     }
 }
 
