@@ -101,6 +101,20 @@ class FinancialStatement {
         }
         $this->documents[$account_transaction->transaction_id]->transactions[] = $account_transaction;
     }
+
+    /**
+     * @param $account_transaction_id
+     * @param $debug_obj
+     * @return AccountingDocument
+     * @throws Exception
+     */
+    public function getDocument($account_transaction_id, $debug_obj = null) {
+        if (!isset($this->documents[$account_transaction_id])) {
+            var_dump($debug_obj);
+            throw new Exception('Unknown account_transaction_id. Unable to proceed.');
+        }
+        return $this->documents[$account_transaction_id];
+    }
 }
 
 /**
@@ -277,12 +291,8 @@ foreach ($json_files as $file) {
         throw new Exception('Missing account_transaction_id. Unable to proceed.');
     }
 
-    if (!isset($statement->documents[$obj->account_transaction_id])) {
-        var_dump($obj);
-        throw new Exception('Unknown account_transaction_id. Unable to proceed.');
-    }
-
-    $bank_transaction = $statement->documents[$obj->account_transaction_id]->getBankTransaction();
+    $document = $statement->getDocument($obj->account_transaction_id, $obj);
+    $bank_transaction = $document->getBankTransaction();
     foreach ($obj->transactions as $file_transaction) {
         // Old format with accounting_post on main level instead of transaction level
         $file_transaction_accounting_post = (isset($file_transaction->accounting_post) ? $file_transaction->accounting_post : $obj->accounting_post);
