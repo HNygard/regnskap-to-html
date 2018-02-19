@@ -10,6 +10,7 @@
     tr.transaction_id_first td {
         border-top: 1px solid gray;
     }
+
     td.transaction_id {
         font-size: 0.6em;
     }
@@ -17,6 +18,7 @@
     td.account_posting {
         border-left: 1px dashed #CCCCCC;
     }
+
     td.account_posting .post_name {
         color: gray;
     }
@@ -26,12 +28,52 @@
         text-align: right;
     }
 
+    td.date,
+    td.account_posting,
+    td.amount {
+        white-space: nowrap;
+    }
+
     td {
         padding: 5px;
     }
 
+    td.extra_info {
+        padding-bottom: 0;
+        padding-top: 0;
+        line-height: 2em;
+    }
+
     tr:hover td {
         background-color: #EEEEEE;
+    }
+
+    /* Bootstrap label */
+    .label-default {
+        background-color: #777;
+    }
+    .label-success {
+        background-color: #5cb85c;
+    }
+    .label-info {
+        background-color: #5bc0de;
+    }
+    .label {
+        display: inline;
+        padding: .2em .6em .3em;
+        font-size: 75%;
+        font-weight: 700;
+        line-height: 1;
+        color: #fff;
+        text-align: center;
+        white-space: nowrap;
+        vertical-align: baseline;
+        border-radius: .25em;
+    }
+    * {
+        -webkit-box-sizing: border-box;
+        -moz-box-sizing: border-box;
+        box-sizing: border-box;
     }
 </style>
 
@@ -39,10 +81,12 @@
     <thead>
     <th>ID</th>
     <th>Date</th>
-    <th>Post</th>
     <th>Beløp</th>
     <th>Post</th>
     <th>Beløp</th>
+    <th>Post</th>
+    <th>Status</th>
+    <th>Ekstra info</th>
     </thead>
     <tbody>
     <?php
@@ -62,7 +106,7 @@
                         <?= $transaction_id ?>
                     </td>
                 <?php } ?>
-                <td><?= date('Y-m-d', $transaction->timestamp) ?></td>
+                <td class="date"><?= date('Y-m-d', $transaction->timestamp) ?></td>
 
                 <td class="amount"><?= formatMoney($transaction->amount_debit, $transaction->currency_debit) ?></td>
                 <td class="account_posting"><?= $statement->getAccountNameHtml($transaction->accounting_post_debit) ?></td>
@@ -78,6 +122,8 @@
                         <?= $document->getStatus() ?>
                     </td>
                 <?php } ?>
+
+                <td class="extra_info"><?= $transaction->extra_info_html ?></td>
             </tr>
         <?php
         }

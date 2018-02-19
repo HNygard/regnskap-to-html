@@ -19,15 +19,15 @@ foreach ($statement->documents as $document) {
 }
 ?>
 
-<table>
+<table style="border-collapse: collapse">
     <?php foreach ($errors as $message => $count) { ?>
         <tr>
-            <td><?= $message ?></td>
-            <td><?= $count ?></td>
+            <td style="border: 1px solid black;"><?= $message ?></td>
+            <td style="border: 1px solid black;"><?= $count ?></td>
         </tr>
     <?php } ?>
 </table>
-
+<br><br>
 
 <?php
 

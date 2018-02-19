@@ -32,7 +32,8 @@ $csv_files = array();
 foreach ($files as $file) {
     if (str_ends_with(strtolower($file), '.json')
         && !str_ends_with($file, 'account-transactions.json')
-        && !str_ends_with($file, 'config.json')) {
+        && !str_ends_with($file, 'config.json')
+    ) {
         $json_files[] = $file;
     }
     if (str_ends_with(strtolower($file), '.csv')) {
@@ -59,6 +60,7 @@ class AccountingConfigAccount {
     var $id;
     var $accounting_post;
 }
+
 class AccountingConfigAccountingPost {
     var $account_number;
     var $name;
@@ -108,7 +110,7 @@ class FinancialStatement {
         $this->year = $config->year;
         $this->accounts = $config->accounts;
 
-        foreach($config->accounting_posts as $post) {
+        foreach ($config->accounting_posts as $post) {
             $this->posts[$post->account_number] = $post->name;
         }
     }
@@ -196,9 +198,9 @@ class AccountingDocument {
 
         if ($this->getSumDebit() != $this->getSumCredit()) {
             return 'Mismatch på sum debit/kredit. '
-                . 'Debit [' . $this->getSumDebit() . ']'
-                . ' - kredit [' . $this->getSumCredit() . ']'
-                . ' = ' . ($this->getSumDebit() - $this->getSumCredit()) .'.';
+            . 'Debit [' . $this->getSumDebit() . ']'
+            . ' - kredit [' . $this->getSumCredit() . ']'
+            . ' = ' . ($this->getSumDebit() - $this->getSumCredit()) . '.';
         }
 
         return 'OK.';
@@ -211,7 +213,8 @@ class AccountingDocument {
 class AccountingTransaction {
     function __construct($transaction_id, $timestamp,
                          $accounting_post_debit, $amount_debit, $currency_debit,
-                         $accounting_post_credit, $amount_credit, $currency_credit) {
+                         $accounting_post_credit, $amount_credit, $currency_credit,
+                         $extra_info_html) {
         $this->transaction_id = $transaction_id;
         $this->timestamp = $timestamp;
 
@@ -222,6 +225,8 @@ class AccountingTransaction {
         $this->accounting_post_credit = $accounting_post_credit;
         $this->amount_credit = $amount_credit;
         $this->currency_credit = $currency_credit;
+
+        $this->extra_info_html = $extra_info_html;
     }
 }
 
@@ -252,6 +257,24 @@ foreach ($statement->accounts as $account) {
 }
 foreach ($api_transactions_per_account as $account_id => $api_transactions_for_account) {
     foreach ($api_transactions_for_account->transactions as $transaction) {
+        $extra_info_html = array();
+        foreach ($transaction->labels as $label) {
+            switch ($label->label_type) {
+                case 'transaction type';
+                    $color = 'label-info';
+                    break;
+                default:
+                    $color = 'label-default';
+                    break;
+            }
+            if (str_starts_with($label->label_type, 'card transaction')) {
+                $color = 'label-success';
+            }
+            $extra_info_html[$label->label_type . '-' . $label->label] =
+                '<span class="label ' . $color . '"
+                    title="' . $label->label_type . '">' . $label->label . '</span> ';
+        }
+        $extra_info_html = implode(' ', $extra_info_html);
         if ($transaction->account_id_debit == $account_id) {
             $statement->addTransaction(new AccountingTransaction(
                 $transaction->id,
@@ -261,7 +284,8 @@ foreach ($api_transactions_per_account as $account_id => $api_transactions_for_a
                 $transaction->currency_debit,
                 null,
                 null,
-                null
+                null,
+                $extra_info_html
             ));
         }
 
@@ -274,7 +298,8 @@ foreach ($api_transactions_per_account as $account_id => $api_transactions_for_a
                 null,
                 $account_id_to_accounting_post[$transaction->account_id_credit],
                 $transaction->amount_credit,
-                $transaction->currency_credit
+                $transaction->currency_credit,
+                $extra_info_html
             ));
         }
     }
@@ -331,7 +356,8 @@ foreach ($json_files as $file) {
                 $file_transaction->currency,
                 null,
                 null,
-                null
+                null,
+                ''
             ));
         }
         else {
@@ -343,7 +369,8 @@ foreach ($json_files as $file) {
                 null,
                 $file_transaction_accounting_post,
                 str_replace(',', '.', $file_transaction->amount),
-                $file_transaction->currency
+                $file_transaction->currency,
+                ''
             ));
         }
 
