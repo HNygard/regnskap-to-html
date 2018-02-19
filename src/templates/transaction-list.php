@@ -1,16 +1,37 @@
 <?php
+/* @var FinancialStatement $statement */
 /* @var AccountingDocument[] $documents */
 ?>
 <style>
+    table {
+        border-collapse: collapse;
+    }
+
     tr.transaction_id_first td {
         border-top: 1px solid gray;
     }
+    td.transaction_id {
+        font-size: 0.6em;
+    }
+
     td.account_posting {
         border-left: 1px dashed #CCCCCC;
     }
+    td.account_posting .post_name {
+        color: gray;
+    }
+
+    td.amount {
+        font-weight: bold;
+        text-align: right;
+    }
+
     td {
-        padding-left: 5px;
-        padding-right: 5px;
+        padding: 5px;
+    }
+
+    tr:hover td {
+        background-color: #EEEEEE;
     }
 </style>
 
@@ -43,11 +64,11 @@
                 <?php } ?>
                 <td><?= date('Y-m-d', $transaction->timestamp) ?></td>
 
-                <td class="account_posting"><?= $transaction->accounting_post_debit ?></td>
-                <td><?= formatMoney($transaction->amount_debit, $transaction->currency_debit) ?></td>
+                <td class="amount"><?= formatMoney($transaction->amount_debit, $transaction->currency_debit) ?></td>
+                <td class="account_posting"><?= $statement->getAccountNameHtml($transaction->accounting_post_debit) ?></td>
 
-                <td class="account_posting"><?= $transaction->accounting_post_credit ?></td>
-                <td><?= formatMoney($transaction->amount_credit, $transaction->currency_credit) ?></td>
+                <td class="amount"><?= formatMoney($transaction->amount_credit, $transaction->currency_credit) ?></td>
+                <td class="account_posting"><?= $statement->getAccountNameHtml($transaction->accounting_post_credit) ?></td>
 
                 <?php
                 if ($i == 0) {

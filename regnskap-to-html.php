@@ -50,12 +50,18 @@ class AccountingConfig {
     var $year;
     /* @var AccountingConfigAccount[] $accounts */
     var $accounts = array();
+    /* @var AccountingConfigAccountingPost[] $accounting_posts */
+    var $accounting_posts = array();
 }
 
 class AccountingConfigAccount {
     var $name;
     var $id;
     var $accounting_post;
+}
+class AccountingConfigAccountingPost {
+    var $account_number;
+    var $name;
 }
 
 if (!file_exists($statement_directory . '/config.json')) {
@@ -68,11 +74,18 @@ if (!file_exists($statement_directory . '/config.json')) {
     $config = new AccountingConfig();
     $config->companyName = 'My Company';
     $config->year = '1971';
+
     $config_account = new AccountingConfigAccount();
     $config_account->name = 'My Bank Account';
     $config_account->id = 'bank-123123123';
     $config_account->accounting_post = '1920';
     $config->accounts = array($config_account);
+
+    $post = new AccountingConfigAccountingPost();
+    $post->account_number = '1234';
+    $post->name = 'Post name';
+    $config->accounting_posts = array($post);
+
     echo json_encode($config, JSON_PRETTY_PRINT);
     echo chr(10);
     echo chr(10);
@@ -85,6 +98,7 @@ if (!file_exists($statement_directory . '/config.json')) {
 class FinancialStatement {
     /* @var AccountingDocument[] $documents */
     var $documents = array();
+    var $posts = array();
 
     /**
      * @param AccountingConfig $config
@@ -93,6 +107,10 @@ class FinancialStatement {
         $this->companyName = $config->companyName;
         $this->year = $config->year;
         $this->accounts = $config->accounts;
+
+        foreach($config->accounting_posts as $post) {
+            $this->posts[$post->account_number] = $post->name;
+        }
     }
 
     public function addTransaction(AccountingTransaction $account_transaction) {
@@ -114,6 +132,14 @@ class FinancialStatement {
             throw new Exception('Unknown account_transaction_id. Unable to proceed.');
         }
         return $this->documents[$account_transaction_id];
+    }
+
+    public function getAccountNameHtml($accounting_post) {
+        if ($accounting_post == null) {
+            return '';
+        }
+
+        return '<span class="post">' . $accounting_post . '</span> - <span class="post_name">' . $this->posts[$accounting_post] . '</span>';
     }
 }
 
