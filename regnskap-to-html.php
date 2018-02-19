@@ -83,7 +83,7 @@ if (!file_exists($statement_directory . '/config.json')) {
  * Regnskap
  */
 class FinancialStatement {
-    /* @var AccountingDocument $documents */
+    /* @var AccountingDocument[] $documents */
     var $documents = array();
 
     /**
@@ -99,7 +99,7 @@ class FinancialStatement {
         if (!isset($this->documents[$account_transaction->transaction_id])) {
             $this->documents[$account_transaction->transaction_id] = new AccountingDocument();
         }
-        $this->documents[$account_transaction->transaction_id]->transactions[] = $account_transaction;
+        $this->documents[$account_transaction->transaction_id]->addTransaction($account_transaction);
     }
 
     /**
@@ -124,42 +124,39 @@ class AccountingDocument {
     /* @var AccountingTransaction[] $transactions */
     var $transactions = array();
 
+    private $sum_debit = 0;
+    private $sum_credit = 0;
+
+    function addTransaction(AccountingTransaction $transaction) {
+        $this->transactions[] = $transaction;
+
+        if ($transaction->amount_debit != null) {
+            $this->sum_debit += $transaction->amount_debit;
+        }
+
+        if (
+            $transaction->currency_debit != null
+            && $transaction->currency_credit != null
+            && ($transaction->currency_debit != 'NOK' || $transaction->currency_credit != 'NOK')
+        ) {
+            throw new Exception('Multi currency not implemented.');
+        }
+
+        if ($transaction->amount_credit != null) {
+            $this->sum_credit += $transaction->amount_credit;
+        }
+    }
+
     function getBankTransaction() {
         return $this->transactions[0];
     }
 
     function getSumDebit() {
-        $sum_debit = 0;
-        foreach ($this->transactions as $transaction) {
-            if ($transaction->amount_debit != null) {
-                $sum_debit += $transaction->amount_debit;
-            }
-
-            if (
-                $transaction->currency_debit != null
-                && $transaction->currency_debit != 'NOK'
-            ) {
-                throw new Exception('Multi currency not implemented.');
-            }
-        }
-        return $sum_debit;
+        return $this->sum_debit;
     }
 
     function getSumCredit() {
-        $sum_credit = 0;
-        foreach ($this->transactions as $transaction) {
-            if ($transaction->amount_credit != null) {
-                $sum_credit += $transaction->amount_credit;
-            }
-
-            if (
-                $transaction->currency_credit != null
-                && $transaction->currency_credit != 'NOK'
-            ) {
-                throw new Exception('Multi currency not implemented.');
-            }
-        }
-        return $sum_credit;
+        return $this->sum_credit;
     }
 
     function isValid() {
@@ -172,7 +169,10 @@ class AccountingDocument {
         }
 
         if ($this->getSumDebit() != $this->getSumCredit()) {
-            return 'Mismatch på sum debit/kredit. Debit [' . $this->getSumDebit() . '] - kredit [' . $this->getSumCredit() . '] = ' . ($this->getSumDebit() - $this->getSumCredit()) .'.';
+            return 'Mismatch på sum debit/kredit. '
+                . 'Debit [' . $this->getSumDebit() . ']'
+                . ' - kredit [' . $this->getSumCredit() . ']'
+                . ' = ' . ($this->getSumDebit() - $this->getSumCredit()) .'.';
         }
 
         return 'OK.';
@@ -336,3 +336,13 @@ function renderTemplate($php_file, $result_file, FinancialStatement $statement) 
 
 renderTemplate('index.php', $statement_directory . '/index.html', $statement);
 renderTemplate('transactions_all.php', $statement_directory . '/transactions_all.html', $statement);
+renderTemplate('transactions_warnings.php', $statement_directory . '/transactions_warnings.html', $statement);
+
+
+
+
+
+
+
+
+
