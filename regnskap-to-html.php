@@ -117,7 +117,7 @@ class FinancialStatement {
 
     public function addTransaction(AccountingTransaction $account_transaction) {
         if (!isset($this->documents[$account_transaction->transaction_id])) {
-            $this->documents[$account_transaction->transaction_id] = new AccountingDocument();
+            $this->documents[$account_transaction->transaction_id] = new AccountingDocument($account_transaction->transaction_id);
         }
         $this->documents[$account_transaction->transaction_id]->addTransaction($account_transaction);
     }
@@ -154,6 +154,10 @@ class AccountingDocument {
 
     private $sum_debit = 0;
     private $sum_credit = 0;
+
+    public function __construct($transaction_id) {
+        $this->id = $transaction_id;
+    }
 
     function addTransaction(AccountingTransaction $transaction) {
         $this->transactions[] = $transaction;
@@ -275,9 +279,14 @@ foreach ($api_transactions_per_account as $account_id => $api_transactions_for_a
                     title="' . $label->label_type . '">' . $label->label . '</span> ';
         }
         $extra_info_html = implode(' ', $extra_info_html);
+        $id = $transaction->id;
+        if (isset($transaction->transaction_id_link) && !empty($transaction->transaction_id_link)) {
+            // -> Linked transactions
+            $id = $transaction->transaction_id_link;
+        }
         if ($transaction->account_id_debit == $account_id) {
             $statement->addTransaction(new AccountingTransaction(
-                $transaction->id,
+                $id,
                 $transaction->timestamp,
                 $account_id_to_accounting_post[$transaction->account_id_debit],
                 $transaction->amount_debit,
@@ -291,7 +300,7 @@ foreach ($api_transactions_per_account as $account_id => $api_transactions_for_a
 
         if ($transaction->account_id_credit == $account_id) {
             $statement->addTransaction(new AccountingTransaction(
-                $transaction->id,
+                $id,
                 $transaction->timestamp,
                 null,
                 null,

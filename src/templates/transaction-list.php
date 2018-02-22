@@ -103,7 +103,7 @@
                 if ($i == 0) {
                     ?>
                     <td class="transaction_id"<?= ($i == 0 ? ' rowspan="' . count($document->transactions) . '"' : '') ?>>
-                        <?= $transaction_id ?>
+                        <?= $document->id ?>
                     </td>
                 <?php } ?>
                 <td class="date"><?= date('Y-m-d', $transaction->timestamp) ?></td>
