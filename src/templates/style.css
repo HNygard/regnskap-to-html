@@ -3,7 +3,7 @@ table {
     border-collapse: collapse;
 }
 
-tr.transaction_bordered td,
+tr.bordered td,
 tr.transaction_id_first td {
     border-top: 1px solid gray;
 }

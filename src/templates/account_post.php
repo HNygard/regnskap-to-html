@@ -65,7 +65,7 @@ foreach ($statement->documents as $document) {
             }
 
             ?>
-            <tr class="transaction_bordered">
+            <tr class="bordered">
                 <?php
                 if ($i == 0) {
                     ?>

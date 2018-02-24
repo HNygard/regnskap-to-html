@@ -405,6 +405,8 @@ function renderTemplate($php_file, $result_file, FinancialStatement $statement, 
 
     <li><a href="<?= $relative_path ?>/transactions_warnings.html">Advarsler</a>
     <li><a href="<?= $relative_path ?>/transactions_all.html">Alle posteringer</a>
+    <li><a href="<?= $relative_path ?>/regnskap.html">Regnskap</a>
+    <li><a href="<?= $relative_path ?>/regnskap_all.html">Regnskap, alle poster</a>
     <?php
     include __DIR__ . '/src/templates/' . $php_file;
     $output = ob_get_clean();
@@ -417,12 +419,13 @@ renderTemplate('transactions_all.php', 'transactions_all.html', $statement);
 renderTemplate('style.css', 'style.css', $statement);
 renderTemplate('transactions_warnings.php', 'transactions_warnings.html', $statement);
 
+renderTemplate('regnskap.php', 'regnskap.html', $statement, false);
+renderTemplate('regnskap.php', 'regnskap_all.html', $statement, true);
 // Render each accounting post
 if (!file_exists($statement_directory . '/account_post')) {
     mkdir($statement_directory . '/account_post');
 }
 function renderPost($post, $statement) {
-
     renderTemplate('account_post.php', 'account_post/account_post-' . $post . '.html', $statement, $post);
 }
 
