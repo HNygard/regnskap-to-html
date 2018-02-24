@@ -400,6 +400,8 @@ function renderTemplate($php_file, $result_file, FinancialStatement $statement, 
     ob_start();
     ?>
     <h1><?= $statement->companyName ?> - Regnskap <?= $statement->year ?></h1>
+    <link type="text/css" rel="stylesheet" href="<?= $relative_path ?>/style.css">
+
 
     <li><a href="<?= $relative_path ?>/transactions_warnings.html">Advarsler</a>
     <li><a href="<?= $relative_path ?>/transactions_all.html">Alle posteringer</a>
@@ -412,6 +414,7 @@ function renderTemplate($php_file, $result_file, FinancialStatement $statement, 
 
 renderTemplate('index.php', 'index.html', $statement);
 renderTemplate('transactions_all.php', 'transactions_all.html', $statement);
+renderTemplate('style.css', 'style.css', $statement);
 renderTemplate('transactions_warnings.php', 'transactions_warnings.html', $statement);
 
 // Render each accounting post
