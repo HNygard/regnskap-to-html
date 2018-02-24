@@ -1,6 +1,7 @@
 <?php
 /* @var FinancialStatement $statement */
 /* @var AccountingDocument[] $documents */
+/* @var String $relative_path */
 ?>
 
 <table>
@@ -35,10 +36,10 @@
                 <td class="date"><?= date('Y-m-d', $transaction->timestamp) ?></td>
 
                 <td class="amount"><?= formatMoney($transaction->amount_debit, $transaction->currency_debit) ?></td>
-                <td class="account_posting"><?= $statement->getAccountNameHtml($transaction->accounting_post_debit) ?></td>
+                <td class="account_posting"><?= $statement->getAccountNameHtml($transaction->accounting_post_debit, $transaction->accounting_subject_debit, $relative_path) ?></td>
 
                 <td class="amount"><?= formatMoney($transaction->amount_credit, $transaction->currency_credit) ?></td>
-                <td class="account_posting"><?= $statement->getAccountNameHtml($transaction->accounting_post_credit) ?></td>
+                <td class="account_posting"><?= $statement->getAccountNameHtml($transaction->accounting_post_credit, $transaction->accounting_subject_credit, $relative_path) ?></td>
 
                 <?php
                 if ($i == 0) {

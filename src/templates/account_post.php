@@ -76,10 +76,10 @@ foreach ($statement->documents as $document) {
                 <td class="date"><?= date('Y-m-d', $transaction->timestamp) ?></td>
 
                 <td class="amount"><?= formatMoney($transaction->amount_debit, $transaction->currency_debit) ?></td>
-                <td class="account_posting"><?= $statement->getAccountNameHtml($transaction->accounting_post_debit, $relative_path) ?></td>
+                <td class="account_posting"><?= $statement->getAccountNameHtml($transaction->accounting_post_debit, $transaction->accounting_subject_debit, $relative_path) ?></td>
 
                 <td class="amount"><?= formatMoney($transaction->amount_credit, $transaction->currency_credit) ?></td>
-                <td class="account_posting"><?= $statement->getAccountNameHtml($transaction->accounting_post_credit, $relative_path) ?></td>
+                <td class="account_posting"><?= $statement->getAccountNameHtml($transaction->accounting_post_credit, $transaction->accounting_subject_credit, $relative_path) ?></td>
 
                 <td class="amount"><?= formatMoney($sum, 'NOK') ?></td>
 

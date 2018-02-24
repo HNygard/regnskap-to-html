@@ -53,6 +53,8 @@ class AccountingConfig {
     var $accounts = array();
     /* @var AccountingConfigAccountingPost[] $accounting_posts */
     var $accounting_posts = array();
+    /* @var AccountingConfigAccountingSubject[] $accounting_subjects */
+    var $accounting_subjects = array();
     /* @var AccountingConfigBudget[] $budgets */
     var $budgets = array();
 }
@@ -66,6 +68,16 @@ class AccountingConfigAccount {
 class AccountingConfigAccountingPost {
     var $account_number;
     var $name;
+}
+
+class AccountingConfigAccountingSubject {
+    var $name;
+    var $key;
+
+    public function __construct($key, $name) {
+        $this->key = $key;
+        $this->name = $name;
+    }
 }
 
 class AccountingConfigBudget {
@@ -120,6 +132,8 @@ class FinancialStatement {
     /* @var AccountingDocument[] $documents */
     var $documents = array();
     var $posts = array();
+    /* @var AccountingConfigAccountingSubject[] $subjects */
+    var $subjects = array();
     /* @var AccountingConfigBudget[] $budgets */
     var $budgets = array();
 
@@ -134,6 +148,12 @@ class FinancialStatement {
         foreach ($config->accounting_posts as $post) {
             $this->posts[$post->account_number] = $post->name;
         }
+
+        $this->subjects = array(new AccountingConfigAccountingSubject('', 'Ingen'));
+        foreach($config->accounting_subjects as $subject) {
+            $this->subjects[] = $subject;
+        }
+
 
         $this->budgets = $config->budgets;
     }
@@ -159,7 +179,7 @@ class FinancialStatement {
         return $this->documents[$account_transaction_id];
     }
 
-    public function getAccountNameHtml($accounting_post, $relative_path = '.') {
+    public function getAccountNameHtml($accounting_post, $accounting_subject, $relative_path = '.') {
         if ($accounting_post == null) {
             return '';
         }
@@ -167,6 +187,7 @@ class FinancialStatement {
         return '<a href="' . $relative_path . '/account_post/account_post-' . $accounting_post . '.html">'
         . '<span class="post">' . $accounting_post . '</span>'
         . ' - <span class="post_name">' . $this->posts[$accounting_post] . '</span>'
+        . (!empty($accounting_subject) ? ' <span class="subject">(' . $accounting_subject . ')</span>' : '')
         . '</a>';
     }
 }
@@ -244,17 +265,20 @@ class AccountingTransaction {
     function __construct($transaction_id, $timestamp,
                          $accounting_post_debit, $amount_debit, $currency_debit,
                          $accounting_post_credit, $amount_credit, $currency_credit,
-                         $extra_info_html) {
+                         $extra_info_html,
+                         $accounting_subject_debit, $accounting_subject_credit) {
         $this->transaction_id = $transaction_id;
         $this->timestamp = $timestamp;
 
         $this->accounting_post_debit = $accounting_post_debit;
         $this->amount_debit = $amount_debit;
         $this->currency_debit = $currency_debit;
+        $this->accounting_subject_debit = $accounting_subject_debit;
 
         $this->accounting_post_credit = $accounting_post_credit;
         $this->amount_credit = $amount_credit;
         $this->currency_credit = $currency_credit;
+        $this->accounting_subject_credit = $accounting_subject_credit;
 
         $this->extra_info_html = $extra_info_html;
     }
@@ -320,7 +344,9 @@ foreach ($api_transactions_per_account as $account_id => $api_transactions_for_a
                 null,
                 null,
                 null,
-                $extra_info_html
+                $extra_info_html,
+                null,
+                null
             ));
         }
 
@@ -334,7 +360,9 @@ foreach ($api_transactions_per_account as $account_id => $api_transactions_for_a
                 $account_id_to_accounting_post[$transaction->account_id_credit],
                 $transaction->amount_credit,
                 $transaction->currency_credit,
-                $extra_info_html
+                $extra_info_html,
+                null,
+                null
             ));
         }
     }
@@ -365,6 +393,7 @@ class RenameFileServerJsonFileTransaction {
     var $currency;
     var $comment;
     var $accounting_post;
+    var $accounting_subject;
 }
 
 foreach ($json_files as $file) {
@@ -382,6 +411,7 @@ foreach ($json_files as $file) {
     foreach ($obj->transactions as $file_transaction) {
         // Old format with accounting_post on main level instead of transaction level
         $file_transaction_accounting_post = (isset($file_transaction->accounting_post) ? $file_transaction->accounting_post : $obj->accounting_post);
+        $file_transaction_accounting_subject = (isset($file_transaction->accounting_subject) ? $file_transaction->accounting_subject : $obj->accounting_subject);
         if ($bank_transaction->amount_credit != null) {
             $statement->addTransaction(new AccountingTransaction(
                 $obj->account_transaction_id,
@@ -392,7 +422,9 @@ foreach ($json_files as $file) {
                 null,
                 null,
                 null,
-                ''
+                '',
+                $file_transaction_accounting_subject,
+                null
             ));
         }
         else {
@@ -405,7 +437,9 @@ foreach ($json_files as $file) {
                 $file_transaction_accounting_post,
                 str_replace(',', '.', $file_transaction->amount),
                 $file_transaction->currency,
-                ''
+                '',
+                null,
+                $file_transaction_accounting_subject
             ));
         }
 

@@ -1,26 +1,43 @@
 <?php
 /* @var FinancialStatement $statement */
 /* @var bool $parameter */
+/* @var String $relative_path */
 $show_all_accounts = $parameter;
 
+$subject_name = array();
 $resultat_poster = array();
+$resultat_poster_subject = array();
+foreach ($statement->subjects as $subject) {
+    $subject_name[$subject->key] = $subject->name;
+    $resultat_poster_subject[$subject->key] = array();
+}
 $balanse_poster = array();
 // TODO: This loop can be better. Loop over all transactions once.
 foreach ($statement->posts as $accounting_post => $accounting_post_name) {
     $sum = 0;
+    $sum_subject = array();
+    foreach ($statement->subjects as $subject) {
+        $sum_subject[$subject->key] = 0;
+    }
+
     foreach ($statement->documents as $document) {
         foreach ($document->transactions as $transaction) {
             if ($transaction->accounting_post_debit == $accounting_post) {
                 $sum -= $transaction->amount_debit;
+                $sum_subject[$transaction->accounting_subject_debit] += $transaction->amount_debit;
             }
             if ($transaction->accounting_post_credit == $accounting_post) {
                 $sum += $transaction->amount_credit;
+                $sum_subject[$transaction->accounting_subject_credit] += $transaction->amount_credit;
             }
         }
     }
 
     if ($accounting_post >= 3000) {
         $resultat_poster[$accounting_post] = $sum;
+        foreach ($statement->subjects as $subject) {
+            $resultat_poster_subject[$subject->key][$accounting_post] = $sum_subject[$subject->key];
+        }
     }
     else {
         $balanse_poster[$accounting_post] = $sum;
@@ -50,12 +67,16 @@ $summarizer = function ($posts) {
         'resultat' => $resultat
     );
 };
-$sum = $summarizer($resultat_poster);
-$resultat_poster[3999] = $sum['sum_inntekter'];
-$resultat_poster[7999] = $sum['sum_kostnader'];
-$resultat_poster[10000] = $sum['sum_inntekter'];
-$resultat_poster[10001] = $sum['sum_kostnader'];
-$resultat_poster[10002] = $sum['resultat'];
+$append_sum = function($summarizer, $posts) {
+    $sum = $summarizer($posts);
+    $posts[3999] = $sum['sum_inntekter'];
+    $posts[7999] = $sum['sum_kostnader'];
+    $posts[10000] = $sum['sum_inntekter'];
+    $posts[10001] = $sum['sum_kostnader'];
+    $posts[10002] = $sum['resultat'];
+    return $posts;
+};
+$resultat_poster = $append_sum($summarizer, $resultat_poster);
 $statement->posts[3999] = 'SUM INNTEKTER';
 $statement->posts[7999] = 'SUM KOSTNADER';
 $statement->posts[10000] = 'Sum inntekter';
@@ -79,6 +100,7 @@ ksort($resultat_poster);
 ksort($balanse_poster);
 
 $printAccountingOverview = function (FinancialStatement $statement, $accounting_posts, $show_all_accounts, $show_budget) {
+    global $relative_path;
     ?>
     <table class="regnskap">
         <thead>
@@ -99,6 +121,7 @@ $printAccountingOverview = function (FinancialStatement $statement, $accounting_
         foreach ($accounting_posts as $accounting_post => $sum) {
             $budgets = array();
             $budget_comment = array();
+            $any_budget = false;
             if ($show_budget) {
                 foreach ($statement->budgets as $i => $budget) {
                     $budgets[$i] = 0;
@@ -108,17 +131,18 @@ $printAccountingOverview = function (FinancialStatement $statement, $accounting_
                             if (!empty($post->comment)) {
                                 $budget_comment[] = $post->comment;
                             }
+                            $any_budget = true;
                         }
                     }
                 }
             }
 
-            if (!$show_all_accounts && $sum == 0) {
+            if (!$show_all_accounts && $sum == 0 && !$any_budget) {
                 continue;
             }
             ?>
             <tr class="bordered accounting-post-<?= $accounting_post ?>">
-                <td class="account_posting"><?= $statement->getAccountNameHtml($accounting_post) ?></td>
+                <td class="account_posting"><?= $statement->getAccountNameHtml($accounting_post, '', $relative_path) ?></td>
                 <td class="amount"><?= formatMoney($sum, 'NOK') ?></td>
                 <?php
                 if ($show_budget) {
@@ -146,18 +170,25 @@ $printAccountingOverview = function (FinancialStatement $statement, $accounting_
 ?>
 
 
-    <h2>Regnskap</h2>
+<h2>Regnskap</h2>
 <?php $printAccountingOverview($statement, $resultat_poster, $show_all_accounts, false); ?>
-    <h2>Balanse</h2>
+<h2>Balanse</h2>
 <?php $printAccountingOverview($statement, $balanse_poster, $show_all_accounts, false); ?>
-    <h2>Budsjettkontroll</h2>
-<?php $printAccountingOverview($statement, $resultat_poster, $show_all_accounts, true); ?>
+<?php
+foreach ($resultat_poster_subject as $subject_key => $posts) {
+    $posts = $append_sum($summarizer, $posts);
+    echo '<h2>Budsjettkontroll - ' . $subject_name[$subject_key] . '</h2>' . chr(10);
+    ksort($posts);
+    $printAccountingOverview($statement, $posts, $show_all_accounts, true);
+}
+?>
 
 <style>
     table.regnskap
     td.account_posting .post {
         color: gray;
     }
+
     table.regnskap td.account_posting .post_name {
         color: black;
     }
