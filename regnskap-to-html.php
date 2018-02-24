@@ -198,8 +198,11 @@ class FinancialStatement {
         return '<a href="' . $this->relative_path . '/account_post/account_post-' . $accounting_post . '.html">'
         . '<span class="post">' . $accounting_post . '</span>'
         . ' - <span class="post_name">' . $this->posts[$accounting_post] . '</span>'
-        . (!empty($accounting_subject) ? ' <span class="subject">(' . $accounting_subject . ')</span>' : '')
-        . '</a>';
+        . '</a>'
+        . (!empty($accounting_subject)
+            ? ' <a href="' . $this->relative_path . '/account_post/subject-' . $accounting_subject . '-account_post-' . $accounting_post . '.html"'
+                . 'class="subject">(' . $accounting_subject . ')</a>'
+            : '');
     }
 }
 
@@ -531,8 +534,44 @@ renderTemplate('regnskap.php', 'regnskap_all.html', $statement, true);
 if (!file_exists($statement_directory . '/account_post')) {
     mkdir($statement_directory . '/account_post');
 }
-function renderPost($post, $statement) {
-    renderTemplate('account_post.php', 'account_post/account_post-' . $post . '.html', $statement, $post);
+function renderPost(AccountPostRenderSettings $postSettings, $statement) {
+    renderTemplate('account_post.php', $postSettings->getResultFileName(), $statement, $postSettings);
+}
+
+class AccountPostRenderSettings {
+    public function __construct($post, $subject) {
+        $this->post = $post;
+        $this->subject = $subject;
+    }
+
+    public function getResultFileName() {
+        if ($this->subject == null) {
+            return 'account_post/account_post-' . $this->post . '.html';
+        }
+        return 'account_post/subject-' . $this->subject . '-account_post-' . $this->post . '.html';
+    }
+
+    public function getPageTitle() {
+        if ($this->subject == null) {
+            return 'Postering - ' . $this->post;
+        }
+        return 'Postering - ' . $this->post . ' - ' . $this->subject;
+    }
+
+    public function isCorrectTransaction($post, $subject) {
+        if ($this->subject == null) {
+            return $this->post == $post;
+        }
+        return $this->post == $post && $this->subject == $subject;
+    }
+
+    public function getLinkAllPostOnAccount(FinancialStatement $statement) {
+        if ($this->subject == null) {
+            return '';
+        }
+        return '<a href="' . $statement->relative_path . '/account_post/account_post-' . $this->post . '.html">'
+            . 'Vis all transaksjoner på '. $this->post . '</a>';
+    }
 }
 
 $posts_renders = array();
@@ -541,13 +580,19 @@ foreach ($statement->documents as $document) {
         if ($transaction->accounting_post_credit != null
             && !isset($posts_renders[$transaction->accounting_post_credit])
         ) {
-            renderPost($transaction->accounting_post_credit, $statement);
+            renderPost(new AccountPostRenderSettings($transaction->accounting_post_credit, null), $statement);
+            foreach ($statement->subjects as $subject) {
+                renderPost(new AccountPostRenderSettings($transaction->accounting_post_credit, $subject->key), $statement);
+            }
             $posts_renders[$transaction->accounting_post_credit] = $transaction->accounting_post_credit;
         }
         if ($transaction->accounting_post_debit != null
             && !isset($posts_renders[$transaction->accounting_post_debit])
         ) {
-            renderPost($transaction->accounting_post_debit, $statement);
+            renderPost(new AccountPostRenderSettings($transaction->accounting_post_debit, null), $statement);
+            foreach ($statement->subjects as $subject) {
+                renderPost(new AccountPostRenderSettings($transaction->accounting_post_debit, $subject->key), $statement);
+            }
             $posts_renders[$transaction->accounting_post_debit] = $transaction->accounting_post_debit;
         }
     }

@@ -1,8 +1,10 @@
 <?php
 /* @var FinancialStatement $statement */
-/* @var int $parameter */
+/* @var AccountPostRenderSettings $parameter */
 ?>
-<h2>Postering <?= $parameter ?></h2>
+<h2><?= $parameter->getPageTitle() ?></h2>
+
+<?=$parameter->getLinkAllPostOnAccount($statement) ?>
 
 <?php
 $errors = array();
@@ -10,7 +12,8 @@ $documents = array();
 foreach ($statement->documents as $document) {
     $document_with_account = false;
     foreach ($document->transactions as $transaction) {
-        if ($transaction->accounting_post_credit == $parameter || $transaction->accounting_post_debit == $parameter) {
+        if ($parameter->isCorrectTransaction($transaction->accounting_post_credit, $transaction->accounting_subject_credit)
+            || $parameter->isCorrectTransaction($transaction->accounting_post_debit, $transaction->accounting_subject_debit)) {
             $document_with_account = true;
         }
     }
@@ -56,10 +59,10 @@ foreach ($statement->documents as $document) {
         /* @var AccountingDocument $document */
         foreach ($document->transactions as $i => $transaction) {
             /* @var AccountingTransaction $transaction */
-            if ($transaction->accounting_post_credit == $parameter) {
+            if ($parameter->isCorrectTransaction($transaction->accounting_post_credit, $transaction->accounting_subject_credit)) {
                 $sum += $transaction->amount_credit;
             }
-            else if ($transaction->accounting_post_debit == $parameter) {
+            else if ($parameter->isCorrectTransaction($transaction->accounting_post_debit, $transaction->accounting_subject_debit)) {
                 $sum -= $transaction->amount_debit;
             }
 

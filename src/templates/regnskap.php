@@ -98,7 +98,7 @@ foreach ($statement->budgets_per_subject as $budget) {
 ksort($resultat_poster);
 ksort($balanse_poster);
 
-$printAccountingOverview = function (FinancialStatement $statement, $accounting_posts, $show_all_accounts, $show_budget, $all_budgets) {
+$printAccountingOverview = function (FinancialStatement $statement, $accounting_posts, $show_all_accounts, $show_budget, $all_budgets, $accounting_subject) {
     ?>
     <table class="regnskap">
         <thead>
@@ -140,7 +140,7 @@ $printAccountingOverview = function (FinancialStatement $statement, $accounting_
             }
             ?>
             <tr class="bordered accounting-post-<?= $accounting_post ?>">
-                <td class="account_posting"><?= $statement->getAccountNameHtml($accounting_post, '') ?></td>
+                <td class="account_posting"><?= $statement->getAccountNameHtml($accounting_post, $accounting_subject) ?></td>
                 <td class="amount"><?= formatMoney($sum, 'NOK') ?></td>
                 <?php
                 if ($show_budget) {
@@ -169,9 +169,9 @@ $printAccountingOverview = function (FinancialStatement $statement, $accounting_
 
 
 <h2>Regnskap</h2>
-<?php $printAccountingOverview($statement, $resultat_poster, $show_all_accounts, false, $statement->budgets); ?>
+<?php $printAccountingOverview($statement, $resultat_poster, $show_all_accounts, false, $statement->budgets, null); ?>
 <h2>Balanse</h2>
-<?php $printAccountingOverview($statement, $balanse_poster, $show_all_accounts, false, $statement->budgets); ?>
+<?php $printAccountingOverview($statement, $balanse_poster, $show_all_accounts, false, $statement->budgets, null); ?>
 <?php
 foreach ($resultat_poster_subject as $subject_key => $posts) {
     $posts = $append_sum($summarizer, $posts);
@@ -183,7 +183,7 @@ foreach ($resultat_poster_subject as $subject_key => $posts) {
     }
     echo '<h2>Budsjettkontroll - ' . $subject_name[$subject_key] . '</h2>' . chr(10);
     ksort($posts);
-    $printAccountingOverview($statement, $posts, $show_all_accounts, true, $budgets);
+    $printAccountingOverview($statement, $posts, $show_all_accounts, true, $budgets, $subject_key);
 }
 ?>
 
