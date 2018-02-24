@@ -1,7 +1,6 @@
 <?php
 /* @var FinancialStatement $statement */
 /* @var bool $parameter */
-/* @var String $relative_path */
 $show_all_accounts = $parameter;
 
 $subject_name = array();
@@ -100,7 +99,6 @@ ksort($resultat_poster);
 ksort($balanse_poster);
 
 $printAccountingOverview = function (FinancialStatement $statement, $accounting_posts, $show_all_accounts, $show_budget) {
-    global $relative_path;
     ?>
     <table class="regnskap">
         <thead>
@@ -142,7 +140,7 @@ $printAccountingOverview = function (FinancialStatement $statement, $accounting_
             }
             ?>
             <tr class="bordered accounting-post-<?= $accounting_post ?>">
-                <td class="account_posting"><?= $statement->getAccountNameHtml($accounting_post, '', $relative_path) ?></td>
+                <td class="account_posting"><?= $statement->getAccountNameHtml($accounting_post, '') ?></td>
                 <td class="amount"><?= formatMoney($sum, 'NOK') ?></td>
                 <?php
                 if ($show_budget) {

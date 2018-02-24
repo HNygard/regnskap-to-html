@@ -1,6 +1,7 @@
 
 table {
     border-collapse: collapse;
+    border-spacing: 0;
 }
 
 tr.bordered td,
@@ -59,14 +60,11 @@ tr.accounting-post-3999 td.budget.amount,
 tr.accounting-post-3999 td.budget_diff.amount,
 tr.accounting-post-7999 td,
 tr.accounting-post-7999 td.budget.amount,
-tr.accounting-post-7999 td.budget_diff.amount {
-    padding-bottom: 3em;
-    font-weight: bold;
-}
-
+tr.accounting-post-7999 td.budget_diff.amount,
 tr.accounting-post-10002 td,
 tr.accounting-post-10002 td.budget.amount,
 tr.accounting-post-10002 td.budget_diff.amount {
+    padding-bottom: 3em;
     font-weight: bold;
 }
 

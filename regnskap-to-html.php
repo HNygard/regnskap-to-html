@@ -137,6 +137,8 @@ class FinancialStatement {
     /* @var AccountingConfigBudget[] $budgets */
     var $budgets = array();
 
+    var $relative_path;
+
     /**
      * @param AccountingConfig $config
      */
@@ -179,12 +181,12 @@ class FinancialStatement {
         return $this->documents[$account_transaction_id];
     }
 
-    public function getAccountNameHtml($accounting_post, $accounting_subject, $relative_path = '.') {
+    public function getAccountNameHtml($accounting_post, $accounting_subject) {
         if ($accounting_post == null) {
             return '';
         }
 
-        return '<a href="' . $relative_path . '/account_post/account_post-' . $accounting_post . '.html">'
+        return '<a href="' . $this->relative_path . '/account_post/account_post-' . $accounting_post . '.html">'
         . '<span class="post">' . $accounting_post . '</span>'
         . ' - <span class="post_name">' . $this->posts[$accounting_post] . '</span>'
         . (!empty($accounting_subject) ? ' <span class="subject">(' . $accounting_subject . ')</span>' : '')
@@ -454,17 +456,20 @@ function renderTemplate($php_file, $result_file, FinancialStatement $statement, 
     if (strpos($result_file, '/') !== false) {
         $relative_path = '..';
     }
+    $statement->relative_path = $relative_path;
     ob_start();
-    ?>
-    <h1><?= $statement->companyName ?> - Regnskap <?= $statement->year ?></h1>
-    <link type="text/css" rel="stylesheet" href="<?= $relative_path ?>/style.css">
+    if (!str_ends_with($php_file, '.css')) {
+        ?>
+        <h1><?= $statement->companyName ?> - Regnskap <?= $statement->year ?></h1>
+        <link type="text/css" rel="stylesheet" href="<?= $relative_path ?>/style.css">
 
 
-    <li><a href="<?= $relative_path ?>/transactions_warnings.html">Advarsler</a>
-    <li><a href="<?= $relative_path ?>/transactions_all.html">Alle posteringer</a>
-    <li><a href="<?= $relative_path ?>/regnskap.html">Regnskap</a>
-    <li><a href="<?= $relative_path ?>/regnskap_all.html">Regnskap, alle poster</a>
+        <li><a href="<?= $relative_path ?>/transactions_warnings.html">Advarsler</a>
+        <li><a href="<?= $relative_path ?>/transactions_all.html">Alle posteringer</a>
+        <li><a href="<?= $relative_path ?>/regnskap.html">Regnskap</a>
+        <li><a href="<?= $relative_path ?>/regnskap_all.html">Regnskap, alle poster</a>
     <?php
+    }
     include __DIR__ . '/src/templates/' . $php_file;
     $output = ob_get_clean();
 
