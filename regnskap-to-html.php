@@ -277,7 +277,8 @@ class AccountingTransaction {
                          $accounting_post_debit, $amount_debit, $currency_debit,
                          $accounting_post_credit, $amount_credit, $currency_credit,
                          $extra_info_html,
-                         $accounting_subject_debit, $accounting_subject_credit) {
+                         $accounting_subject_debit, $accounting_subject_credit,
+                         $comment_debit, $comment_credit) {
         $this->transaction_id = $transaction_id;
         $this->timestamp = $timestamp;
 
@@ -285,13 +286,33 @@ class AccountingTransaction {
         $this->amount_debit = $amount_debit;
         $this->currency_debit = $currency_debit;
         $this->accounting_subject_debit = $accounting_subject_debit;
+        $this->comment_debit = $comment_debit;
 
         $this->accounting_post_credit = $accounting_post_credit;
         $this->amount_credit = $amount_credit;
         $this->currency_credit = $currency_credit;
         $this->accounting_subject_credit = $accounting_subject_credit;
+        $this->comment_credit = $comment_credit;
 
         $this->extra_info_html = $extra_info_html;
+    }
+
+    public function printDateAmountsHtml(FinancialStatement $statement) {
+        ?>
+        <td class="date"><?= date('Y-m-d', $this->timestamp) ?></td>
+
+        <td class="amount"><?= formatMoney($this->amount_debit, $this->currency_debit) ?></td>
+        <td class="account_posting">
+            <?= $statement->getAccountNameHtml($this->accounting_post_debit, $this->accounting_subject_debit) ?>
+            <?= !empty($this->comment_debit) ? '<br><span class="account_posting_comment">' . htmlentities($this->comment_debit, ENT_QUOTES) . '</span>': '' ?>
+        </td>
+
+        <td class="amount"><?= formatMoney($this->amount_credit, $this->currency_credit) ?></td>
+        <td class="account_posting">
+            <?= $statement->getAccountNameHtml($this->accounting_post_credit, $this->accounting_subject_credit) ?>
+            <?= !empty($this->comment_credit) ? '<br><span class="account_posting_comment">' . htmlentities($this->comment_credit, ENT_QUOTES) . '</span>' : '' ?>
+        </td>
+        <?php
     }
 }
 
@@ -362,6 +383,8 @@ foreach ($api_transactions_per_account as $account_id => $api_transactions_for_a
                 null,
                 $extra_info_html,
                 null,
+                null,
+                null,
                 null
             ));
         }
@@ -377,6 +400,8 @@ foreach ($api_transactions_per_account as $account_id => $api_transactions_for_a
                 $transaction->amount_credit,
                 $transaction->currency_credit,
                 $extra_info_html,
+                null,
+                null,
                 null,
                 null
             ));
@@ -428,6 +453,7 @@ foreach ($json_files as $file) {
         // Old format with accounting_post on main level instead of transaction level
         $file_transaction_accounting_post = (isset($file_transaction->accounting_post) ? $file_transaction->accounting_post : $obj->accounting_post);
         $file_transaction_accounting_subject = (isset($file_transaction->accounting_subject) ? $file_transaction->accounting_subject : $obj->accounting_subject);
+        $file_transaction_comment = (isset($file_transaction->comment) ? $file_transaction->comment : $obj->comment);
         if ($bank_transaction->amount_credit != null) {
             $statement->addTransaction(new AccountingTransaction(
                 $obj->account_transaction_id,
@@ -440,6 +466,8 @@ foreach ($json_files as $file) {
                 null,
                 '',
                 $file_transaction_accounting_subject,
+                null,
+                $file_transaction_comment,
                 null
             ));
         }
@@ -455,7 +483,9 @@ foreach ($json_files as $file) {
                 $file_transaction->currency,
                 '',
                 null,
-                $file_transaction_accounting_subject
+                $file_transaction_accounting_subject,
+                null,
+                $file_transaction_comment
             ));
         }
 

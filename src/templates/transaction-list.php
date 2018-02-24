@@ -32,13 +32,8 @@
                         <?= $document->id ?>
                     </td>
                 <?php } ?>
-                <td class="date"><?= date('Y-m-d', $transaction->timestamp) ?></td>
 
-                <td class="amount"><?= formatMoney($transaction->amount_debit, $transaction->currency_debit) ?></td>
-                <td class="account_posting"><?= $statement->getAccountNameHtml($transaction->accounting_post_debit, $transaction->accounting_subject_debit) ?></td>
-
-                <td class="amount"><?= formatMoney($transaction->amount_credit, $transaction->currency_credit) ?></td>
-                <td class="account_posting"><?= $statement->getAccountNameHtml($transaction->accounting_post_credit, $transaction->accounting_subject_credit) ?></td>
+                <?php $transaction->printDateAmountsHtml($statement); ?>
 
                 <?php
                 if ($i == 0) {

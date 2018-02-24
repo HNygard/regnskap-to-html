@@ -22,6 +22,10 @@ td.account_posting .post_name {
     color: gray;
 }
 
+.account_posting_comment {
+    color: cornflowerblue;
+}
+
 td.amount {
     font-weight: bold;
     text-align: right;
