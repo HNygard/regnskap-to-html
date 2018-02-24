@@ -53,6 +53,8 @@ class AccountingConfig {
     var $accounts = array();
     /* @var AccountingConfigAccountingPost[] $accounting_posts */
     var $accounting_posts = array();
+    /* @var AccountingConfigBudget[] $budgets */
+    var $budgets = array();
 }
 
 class AccountingConfigAccount {
@@ -64,6 +66,17 @@ class AccountingConfigAccount {
 class AccountingConfigAccountingPost {
     var $account_number;
     var $name;
+}
+
+class AccountingConfigBudget {
+    var $name;
+    /* @var AccountingConfigBudgetPost[] $posts */
+    var $posts;
+}
+class AccountingConfigBudgetPost {
+    var $account_number;
+    var $amount;
+    var $comment;
 }
 
 if (!file_exists($statement_directory . '/config.json')) {
@@ -101,6 +114,8 @@ class FinancialStatement {
     /* @var AccountingDocument[] $documents */
     var $documents = array();
     var $posts = array();
+    /* @var AccountingConfigBudget[] $budgets */
+    var $budgets = array();
 
     /**
      * @param AccountingConfig $config
@@ -113,6 +128,8 @@ class FinancialStatement {
         foreach ($config->accounting_posts as $post) {
             $this->posts[$post->account_number] = $post->name;
         }
+
+        $this->budgets = $config->budgets;
     }
 
     public function addTransaction(AccountingTransaction $account_transaction) {

@@ -5,6 +5,7 @@ $show_all_accounts = $parameter;
 
 $resultat_poster = array();
 $balanse_poster = array();
+// TODO: This loop can be better. Loop over all transactions once.
 foreach ($statement->posts as $accounting_post => $accounting_post_name) {
     $sum = 0;
     foreach ($statement->documents as $document) {
@@ -34,10 +35,35 @@ $printAccountingOverview = function (FinancialStatement $statement, $accounting_
         <thead>
         <th>Konto</th>
         <th>Beløp</th>
+        <?php
+        if ($show_budget) {
+            foreach ($statement->budgets as $budget) {
+                ?>
+                <th><?= $budget->name ?></th>
+            <?php
+            }
+        }
+        ?>
         </thead>
         <tbody>
         <?php
         foreach ($accounting_posts as $accounting_post => $sum) {
+            $budgets = array();
+            $budget_comment = array();
+            if ($show_budget) {
+                foreach ($statement->budgets as $i => $budget) {
+                    $budgets[$i] = 0;
+                    foreach ($budget->posts as $post) {
+                        if ($post->account_number == $accounting_post) {
+                            $budgets[$i] = $post->amount;
+                            if (!empty($post->comment)) {
+                                $budget_comment[] = $post->comment;
+                            }
+                        }
+                    }
+                }
+            }
+
             if (!$show_all_accounts && $sum == 0) {
                 continue;
             }
@@ -45,6 +71,22 @@ $printAccountingOverview = function (FinancialStatement $statement, $accounting_
             <tr class="bordered">
                 <td class="account_posting"><?= $statement->getAccountNameHtml($accounting_post) ?></td>
                 <td class="amount"><?= formatMoney($sum, 'NOK') ?></td>
+                <?php
+                if ($show_budget) {
+                    foreach ($budgets as $budget_amount) {
+                        $budget_diff = $sum - $budget_amount;
+                        ?>
+                        <td class="budget amount"><?= formatMoney($budget_amount, 'NOK') ?></td>
+                        <td class="budget_diff amount <?= ($budget_diff < 0 ? 'amount_negative' : '') ?>">
+                            <?= formatMoney($budget_diff, 'NOK') ?>
+                        </td>
+                    <?php
+                    }
+                    ?>
+                    <td class="budget_comment"><?= implode('<br>', $budget_comment) ?></td>
+                <?php
+                }
+                ?>
             </tr>
         <?php } ?>
         </tbody>
@@ -58,6 +100,6 @@ $printAccountingOverview = function (FinancialStatement $statement, $accounting_
     <h2>Regnskap</h2>
 <?php $printAccountingOverview($statement, $resultat_poster, $show_all_accounts, false); ?>
     <h2>Balanse</h2>
-<?php $printAccountingOverview($statement, $balanse_poster, $show_all_accounts, false); /*?>
+<?php $printAccountingOverview($statement, $balanse_poster, $show_all_accounts, false); ?>
     <h2>Budsjettkontroll</h2>
-<?php $printAccountingOverview($statement, $resultat_poster, $show_all_accounts, true); */?>
+<?php $printAccountingOverview($statement, $resultat_poster, $show_all_accounts, true); ?>

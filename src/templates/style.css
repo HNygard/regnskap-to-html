@@ -12,7 +12,8 @@ td.transaction_id {
     font-size: 0.6em;
 }
 
-td.account_posting {
+td.account_posting,
+td.budget {
     border-left: 1px dashed #CCCCCC;
 }
 
@@ -24,11 +25,19 @@ td.amount {
     font-weight: bold;
     text-align: right;
 }
+td.amount_negative {
+    color: red;
+}
 
 td.date,
 td.account_posting,
 td.amount {
     white-space: nowrap;
+}
+
+td.budget.amount,
+td.budget_diff.amount {
+    font-weight: normal;
 }
 
 td {
