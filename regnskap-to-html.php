@@ -136,12 +136,15 @@ class FinancialStatement {
         return $this->documents[$account_transaction_id];
     }
 
-    public function getAccountNameHtml($accounting_post) {
+    public function getAccountNameHtml($accounting_post, $relative_path = '.') {
         if ($accounting_post == null) {
             return '';
         }
 
-        return '<span class="post">' . $accounting_post . '</span> - <span class="post_name">' . $this->posts[$accounting_post] . '</span>';
+        return '<a href="' . $relative_path . '/account_post/account_post-' . $accounting_post . '.html">'
+        . '<span class="post">' . $accounting_post . '</span>'
+        . ' - <span class="post_name">' . $this->posts[$accounting_post] . '</span>'
+        . '</a>';
     }
 }
 
@@ -387,18 +390,56 @@ foreach ($json_files as $file) {
 }
 
 // :: Render
-function renderTemplate($php_file, $result_file, FinancialStatement $statement) {
+function renderTemplate($php_file, $result_file, FinancialStatement $statement, $parameter = null) {
+    global $statement_directory;
     echo '[' . $statement->companyName . ' ' . $statement->year . '] - Rendering [' . $php_file . '] to [' . $result_file . '].' . chr(10);
+    $relative_path = '.';
+    if (strpos($result_file, '/') !== false) {
+        $relative_path = '..';
+    }
     ob_start();
+    ?>
+    <h1><?= $statement->companyName ?> - Regnskap <?= $statement->year ?></h1>
+
+    <li><a href="<?= $relative_path ?>/transactions_warnings.html">Advarsler</a>
+    <li><a href="<?= $relative_path ?>/transactions_all.html">Alle posteringer</a>
+    <?php
     include __DIR__ . '/src/templates/' . $php_file;
     $output = ob_get_clean();
 
-    file_put_contents($result_file, $output);
+    file_put_contents($statement_directory . '/' . $result_file, $output);
 }
 
-renderTemplate('index.php', $statement_directory . '/index.html', $statement);
-renderTemplate('transactions_all.php', $statement_directory . '/transactions_all.html', $statement);
-renderTemplate('transactions_warnings.php', $statement_directory . '/transactions_warnings.html', $statement);
+renderTemplate('index.php', 'index.html', $statement);
+renderTemplate('transactions_all.php', 'transactions_all.html', $statement);
+renderTemplate('transactions_warnings.php', 'transactions_warnings.html', $statement);
+
+// Render each accounting post
+if (!file_exists($statement_directory . '/account_post')) {
+    mkdir($statement_directory . '/account_post');
+}
+function renderPost($post, $statement) {
+
+    renderTemplate('account_post.php', 'account_post/account_post-' . $post . '.html', $statement, $post);
+}
+
+$posts_renders = array();
+foreach ($statement->documents as $document) {
+    foreach ($document->transactions as $transaction) {
+        if ($transaction->accounting_post_credit != null
+            && !isset($posts_renders[$transaction->accounting_post_credit])
+        ) {
+            renderPost($transaction->accounting_post_credit, $statement);
+            $posts_renders[$transaction->accounting_post_credit] = $transaction->accounting_post_credit;
+        }
+        if ($transaction->accounting_post_debit != null
+            && !isset($posts_renders[$transaction->accounting_post_debit])
+        ) {
+            renderPost($transaction->accounting_post_debit, $statement);
+            $posts_renders[$transaction->accounting_post_debit] = $transaction->accounting_post_debit;
+        }
+    }
+}
 
 
 
