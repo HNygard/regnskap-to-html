@@ -77,6 +77,12 @@ class AccountingConfigBudgetPost {
     var $account_number;
     var $amount;
     var $comment;
+
+    public function __construct($account_number, $amount) {
+        $this->account_number = $account_number;
+        $this->amount = $amount;
+        $this->comment = '';
+    }
 }
 
 if (!file_exists($statement_directory . '/config.json')) {

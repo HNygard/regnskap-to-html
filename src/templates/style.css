@@ -54,6 +54,33 @@ tr:hover td {
     background-color: #EEEEEE;
 }
 
+tr.accounting-post-3999 td,
+tr.accounting-post-3999 td.budget.amount,
+tr.accounting-post-3999 td.budget_diff.amount,
+tr.accounting-post-7999 td,
+tr.accounting-post-7999 td.budget.amount,
+tr.accounting-post-7999 td.budget_diff.amount {
+    padding-bottom: 3em;
+    font-weight: bold;
+}
+
+tr.accounting-post-10002 td,
+tr.accounting-post-10002 td.budget.amount,
+tr.accounting-post-10002 td.budget_diff.amount {
+    font-weight: bold;
+}
+
+a,
+a:visited,
+a:active {
+    color: black;
+    text-decoration: none;
+}
+a:hover {
+    color: black;
+    text-decoration: underline;
+}
+
 /* Bootstrap label */
 .label-default {
     background-color: #777;

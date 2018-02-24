@@ -26,12 +26,61 @@ foreach ($statement->posts as $accounting_post => $accounting_post_name) {
         $balanse_poster[$accounting_post] = $sum;
     }
 }
+
+// Sums
+// 0000-3999 = Sum inntekter
+// 4000-7999 = Sum kostnader
+// Result = Sum inntekter + sum kostnader + annet
+$summarizer = function ($posts) {
+    $sum_inntekter = 0;
+    $sum_kostnader = 0;
+    $resultat = 0;
+    foreach ($posts as $post => $amount) {
+        if ($post < 4000) {
+            $sum_inntekter += $amount;
+        }
+        elseif ($post < 8000) {
+            $sum_kostnader += $amount;
+        }
+        $resultat += $amount;
+    }
+    return array(
+        'sum_inntekter' => $sum_inntekter,
+        'sum_kostnader' => $sum_kostnader,
+        'resultat' => $resultat
+    );
+};
+$sum = $summarizer($resultat_poster);
+$resultat_poster[3999] = $sum['sum_inntekter'];
+$resultat_poster[7999] = $sum['sum_kostnader'];
+$resultat_poster[10000] = $sum['sum_inntekter'];
+$resultat_poster[10001] = $sum['sum_kostnader'];
+$resultat_poster[10002] = $sum['resultat'];
+$statement->posts[3999] = 'SUM INNTEKTER';
+$statement->posts[7999] = 'SUM KOSTNADER';
+$statement->posts[10000] = 'Sum inntekter';
+$statement->posts[10001] = 'Sum kostnader';
+$statement->posts[10002] = 'RESULTAT';
+
+foreach ($statement->budgets as $budget) {
+    $posts = array();
+    foreach ($budget->posts as $post) {
+        $posts[$post->account_number] = $post->amount;
+    }
+    $sum = $summarizer($posts);
+    $budget->posts[] = new AccountingConfigBudgetPost(3999, $sum['sum_inntekter']);
+    $budget->posts[] = new AccountingConfigBudgetPost(7999, $sum['sum_kostnader']);
+    $budget->posts[] = new AccountingConfigBudgetPost(10000, $sum['sum_inntekter']);
+    $budget->posts[] = new AccountingConfigBudgetPost(10001, $sum['sum_kostnader']);
+    $budget->posts[] = new AccountingConfigBudgetPost(10002, $sum['resultat']);
+}
+
 ksort($resultat_poster);
 ksort($balanse_poster);
 
 $printAccountingOverview = function (FinancialStatement $statement, $accounting_posts, $show_all_accounts, $show_budget) {
     ?>
-    <table>
+    <table class="regnskap">
         <thead>
         <th>Konto</th>
         <th>Beløp</th>
@@ -68,7 +117,7 @@ $printAccountingOverview = function (FinancialStatement $statement, $accounting_
                 continue;
             }
             ?>
-            <tr class="bordered">
+            <tr class="bordered accounting-post-<?= $accounting_post ?>">
                 <td class="account_posting"><?= $statement->getAccountNameHtml($accounting_post) ?></td>
                 <td class="amount"><?= formatMoney($sum, 'NOK') ?></td>
                 <?php
@@ -103,3 +152,13 @@ $printAccountingOverview = function (FinancialStatement $statement, $accounting_
 <?php $printAccountingOverview($statement, $balanse_poster, $show_all_accounts, false); ?>
     <h2>Budsjettkontroll</h2>
 <?php $printAccountingOverview($statement, $resultat_poster, $show_all_accounts, true); ?>
+
+<style>
+    table.regnskap
+    td.account_posting .post {
+        color: gray;
+    }
+    table.regnskap td.account_posting .post_name {
+        color: black;
+    }
+</style>
