@@ -1,5 +1,11 @@
 <?php
 
+date_default_timezone_set('Europe/Oslo');
+
+set_error_handler(function ($errno, $errstr, $errfile, $errline, array $errcontext) {
+    throw new ErrorException($errstr, 0, $errno, $errfile, $errline);
+});
+
 function str_starts_with($haystack, $needle) {
     return substr($haystack, 0, strlen($needle)) == $needle;
 }

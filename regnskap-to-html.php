@@ -57,6 +57,8 @@ class AccountingConfig {
     var $accounting_subjects = array();
     /* @var AccountingConfigBudget[] $budgets */
     var $budgets = array();
+    /* @var AccountingConfigBudgetPerSubject[] $budgets_per_subject */
+    var $budgets_per_subject = array();
 }
 
 class AccountingConfigAccount {
@@ -84,6 +86,9 @@ class AccountingConfigBudget {
     var $name;
     /* @var AccountingConfigBudgetPost[] $posts */
     var $posts;
+}
+class AccountingConfigBudgetPerSubject extends AccountingConfigBudget {
+    var $accounting_subject;
 }
 class AccountingConfigBudgetPost {
     var $account_number;
@@ -137,6 +142,9 @@ class FinancialStatement {
     /* @var AccountingConfigBudget[] $budgets */
     var $budgets = array();
 
+    /* @var AccountingConfigBudgetPerSubject[] $budgets_per_subject */
+    var $budgets_per_subject = array();
+
     var $relative_path;
 
     /**
@@ -158,6 +166,7 @@ class FinancialStatement {
 
 
         $this->budgets = $config->budgets;
+        $this->budgets_per_subject = $config->budgets_per_subject;
     }
 
     public function addTransaction(AccountingTransaction $account_transaction) {
@@ -287,6 +296,11 @@ class AccountingTransaction {
 }
 
 $config = json_decode(file_get_contents($statement_directory . '/config.json'));
+if ($config == null) {
+    echo 'Unable to read config.json' . chr(10);
+    echo json_last_error_msg() . chr(10);
+    exit;
+}
 $statement = new FinancialStatement($config);
 
 // :: Get data - Bank accounts over API

@@ -23,7 +23,7 @@ foreach ($statement->posts as $accounting_post => $accounting_post_name) {
         foreach ($document->transactions as $transaction) {
             if ($transaction->accounting_post_debit == $accounting_post) {
                 $sum -= $transaction->amount_debit;
-                $sum_subject[$transaction->accounting_subject_debit] += $transaction->amount_debit;
+                $sum_subject[$transaction->accounting_subject_debit] -= $transaction->amount_debit;
             }
             if ($transaction->accounting_post_credit == $accounting_post) {
                 $sum += $transaction->amount_credit;
@@ -82,7 +82,7 @@ $statement->posts[10000] = 'Sum inntekter';
 $statement->posts[10001] = 'Sum kostnader';
 $statement->posts[10002] = 'RESULTAT';
 
-foreach ($statement->budgets as $budget) {
+foreach ($statement->budgets_per_subject as $budget) {
     $posts = array();
     foreach ($budget->posts as $post) {
         $posts[$post->account_number] = $post->amount;
@@ -98,7 +98,7 @@ foreach ($statement->budgets as $budget) {
 ksort($resultat_poster);
 ksort($balanse_poster);
 
-$printAccountingOverview = function (FinancialStatement $statement, $accounting_posts, $show_all_accounts, $show_budget) {
+$printAccountingOverview = function (FinancialStatement $statement, $accounting_posts, $show_all_accounts, $show_budget, $all_budgets) {
     ?>
     <table class="regnskap">
         <thead>
@@ -106,7 +106,7 @@ $printAccountingOverview = function (FinancialStatement $statement, $accounting_
         <th>Beløp</th>
         <?php
         if ($show_budget) {
-            foreach ($statement->budgets as $budget) {
+            foreach ($all_budgets as $budget) {
                 ?>
                 <th><?= $budget->name ?></th>
             <?php
@@ -121,7 +121,7 @@ $printAccountingOverview = function (FinancialStatement $statement, $accounting_
             $budget_comment = array();
             $any_budget = false;
             if ($show_budget) {
-                foreach ($statement->budgets as $i => $budget) {
+                foreach ($all_budgets as $i => $budget) {
                     $budgets[$i] = 0;
                     foreach ($budget->posts as $post) {
                         if ($post->account_number == $accounting_post) {
@@ -169,15 +169,21 @@ $printAccountingOverview = function (FinancialStatement $statement, $accounting_
 
 
 <h2>Regnskap</h2>
-<?php $printAccountingOverview($statement, $resultat_poster, $show_all_accounts, false); ?>
+<?php $printAccountingOverview($statement, $resultat_poster, $show_all_accounts, false, $statement->budgets); ?>
 <h2>Balanse</h2>
-<?php $printAccountingOverview($statement, $balanse_poster, $show_all_accounts, false); ?>
+<?php $printAccountingOverview($statement, $balanse_poster, $show_all_accounts, false, $statement->budgets); ?>
 <?php
 foreach ($resultat_poster_subject as $subject_key => $posts) {
     $posts = $append_sum($summarizer, $posts);
+    $budgets = array();
+    foreach($statement->budgets_per_subject as $budget_per_subject) {
+        if ($budget_per_subject->accounting_subject == $subject_key) {
+            $budgets[] = $budget_per_subject;
+        }
+    }
     echo '<h2>Budsjettkontroll - ' . $subject_name[$subject_key] . '</h2>' . chr(10);
     ksort($posts);
-    $printAccountingOverview($statement, $posts, $show_all_accounts, true);
+    $printAccountingOverview($statement, $posts, $show_all_accounts, true, $budgets);
 }
 ?>
 
