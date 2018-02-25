@@ -33,6 +33,7 @@ foreach ($files as $file) {
     if (str_ends_with(strtolower($file), '.json')
         && !str_ends_with($file, 'account-transactions.json')
         && !str_ends_with($file, 'config.json')
+        && !str_ends_with($file, 'manual-transactions.json')
     ) {
         $json_files[] = $file;
     }
@@ -87,9 +88,11 @@ class AccountingConfigBudget {
     /* @var AccountingConfigBudgetPost[] $posts */
     var $posts;
 }
+
 class AccountingConfigBudgetPerSubject extends AccountingConfigBudget {
     var $accounting_subject;
 }
+
 class AccountingConfigBudgetPost {
     var $account_number;
     var $amount;
@@ -160,7 +163,7 @@ class FinancialStatement {
         }
 
         $this->subjects = array(new AccountingConfigAccountingSubject('', 'Ingen'));
-        foreach($config->accounting_subjects as $subject) {
+        foreach ($config->accounting_subjects as $subject) {
             $this->subjects[] = $subject;
         }
 
@@ -201,7 +204,7 @@ class FinancialStatement {
         . '</a>'
         . (!empty($accounting_subject)
             ? ' <a href="' . $this->relative_path . '/account_post/subject-' . $accounting_subject . '-account_post-' . $accounting_post . '.html"'
-                . 'class="subject">(' . $accounting_subject . ')</a>'
+            . 'class="subject">(' . $accounting_subject . ')</a>'
             : '');
     }
 }
@@ -242,6 +245,10 @@ class AccountingDocument {
 
     function getBankTransaction() {
         return $this->transactions[0];
+    }
+
+    public function getTimestampFirstTransaction() {
+        return $this->transactions[0]->timestamp;
     }
 
     function getSumDebit() {
@@ -307,7 +314,7 @@ class AccountingTransaction {
         <td class="amount"><?= formatMoney($this->amount_debit, $this->currency_debit) ?></td>
         <td class="account_posting">
             <?= $statement->getAccountNameHtml($this->accounting_post_debit, $this->accounting_subject_debit) ?>
-            <?= !empty($this->comment_debit) ? '<br><span class="account_posting_comment">' . htmlentities($this->comment_debit, ENT_QUOTES) . '</span>': '' ?>
+            <?= !empty($this->comment_debit) ? '<br><span class="account_posting_comment">' . htmlentities($this->comment_debit, ENT_QUOTES) . '</span>' : '' ?>
         </td>
 
         <td class="amount"><?= formatMoney($this->amount_credit, $this->currency_credit) ?></td>
@@ -315,7 +322,7 @@ class AccountingTransaction {
             <?= $statement->getAccountNameHtml($this->accounting_post_credit, $this->accounting_subject_credit) ?>
             <?= !empty($this->comment_credit) ? '<br><span class="account_posting_comment">' . htmlentities($this->comment_credit, ENT_QUOTES) . '</span>' : '' ?>
         </td>
-        <?php
+    <?php
     }
 }
 
@@ -412,6 +419,55 @@ foreach ($api_transactions_per_account as $account_id => $api_transactions_for_a
     }
 }
 
+// :: Get manual transactions
+class ManualTransactionsFile {
+    /* @var ManualTransaction[] $transactions */
+    var $transactions;
+}
+
+class ManualTransaction {
+    var $id;
+    var $date;
+    var $accounting_post_debit;
+    var $accounting_post_credit;
+    var $accounting_subject_debit;
+    var $accounting_subject_credit;
+    var $amount_debit;
+    var $amount_credit;
+    var $currency_debit;
+    var $currency_credit;
+
+    var $comment_debit;
+    var $comment_credit;
+}
+
+/* @var ManualTransactionsFile $manual_transactions */
+$manual_transactions = json_decode(file_get_contents($statement_directory . '/manual-transactions.json'));
+if ($manual_transactions == null) {
+    echo 'Unable to read manual_transactions.json' . chr(10);
+    echo json_last_error_msg() . chr(10);
+    exit;
+}
+foreach ($manual_transactions->transactions as $i => $manual_transaction) {
+    $is_debit = (isset($manual_transaction->accounting_post_debit));
+    $is_credit = (isset($manual_transaction->accounting_post_credit));
+    $statement->addTransaction(new AccountingTransaction(
+        $manual_transaction->id,
+        mktime(0, 0, 0, substr($manual_transaction->date, 5, 2), substr($manual_transaction->date, 8, 2), substr($manual_transaction->date, 0, 4)),
+        ($is_debit ? $manual_transaction->accounting_post_debit : null),
+        ($is_debit ? $manual_transaction->amount_debit : null),
+        ($is_debit ? $manual_transaction->currency_debit : null),
+        ($is_credit ? $manual_transaction->accounting_post_credit : null),
+        ($is_credit ? $manual_transaction->amount_credit : null),
+        ($is_credit ? $manual_transaction->currency_credit : null),
+        '',
+        ($is_debit ? $manual_transaction->accounting_subject_debit : null),
+        ($is_credit ? $manual_transaction->accounting_subject_credit : null),
+        ($is_debit ? $manual_transaction->comment_debit : null),
+        ($is_credit ? $manual_transaction->comment_credit : null)
+    ));
+}
+
 // :: Geta data - JSON files from https://github.com/HNygard/renamefile-server-nodejs
 class RenameFileServerJsonFile {
     var $date;
@@ -454,8 +510,13 @@ foreach ($json_files as $file) {
     $bank_transaction = $document->getBankTransaction();
     foreach ($obj->transactions as $file_transaction) {
         // Old format with accounting_post on main level instead of transaction level
-        $file_transaction_accounting_post = (isset($file_transaction->accounting_post) ? $file_transaction->accounting_post : $obj->accounting_post);
-        $file_transaction_accounting_subject = (isset($file_transaction->accounting_subject) ? $file_transaction->accounting_subject : $obj->accounting_subject);
+        $file_transaction_accounting_post = (isset($file_transaction->accounting_post)
+            ? $file_transaction->accounting_post
+            : (isset($obj->accounting_post) ? $obj->accounting_post : '')
+        );
+        $file_transaction_accounting_subject = (isset($file_transaction->accounting_subject)
+            ? $file_transaction->accounting_subject
+            : $obj->accounting_subject);
         $file_transaction_comment = (isset($file_transaction->comment) ? $file_transaction->comment : $obj->comment);
         if ($bank_transaction->amount_credit != null) {
             $statement->addTransaction(new AccountingTransaction(
@@ -494,6 +555,13 @@ foreach ($json_files as $file) {
 
     }
 }
+
+// :: Sort transactions
+function docSort(AccountingDocument $a, AccountingDocument $b) {
+    return $a->getTimestampFirstTransaction() - $b->getTimestampFirstTransaction();
+}
+
+usort($statement->documents ,'docSort');
 
 // :: Render
 function renderTemplate($php_file, $result_file, FinancialStatement $statement, $parameter = null) {
@@ -570,7 +638,7 @@ class AccountPostRenderSettings {
             return '';
         }
         return '<a href="' . $statement->relative_path . '/account_post/account_post-' . $this->post . '.html">'
-            . 'Vis all transaksjoner på '. $this->post . '</a>';
+        . 'Vis all transaksjoner på ' . $this->post . '</a>';
     }
 }
 
