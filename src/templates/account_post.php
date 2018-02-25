@@ -60,10 +60,10 @@ foreach ($statement->documents as $document) {
         foreach ($document->transactions as $i => $transaction) {
             /* @var AccountingTransaction $transaction */
             if ($parameter->isCorrectTransaction($transaction->accounting_post_credit, $transaction->accounting_subject_credit)) {
-                $sum += $transaction->amount_credit;
+                $sum -= $transaction->amount_credit;
             }
             else if ($parameter->isCorrectTransaction($transaction->accounting_post_debit, $transaction->accounting_subject_debit)) {
-                $sum -= $transaction->amount_debit;
+                $sum += $transaction->amount_debit;
             }
 
             ?>
