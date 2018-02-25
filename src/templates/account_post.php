@@ -44,13 +44,13 @@ foreach ($statement->documents as $document) {
     <thead>
     <th>ID</th>
     <th>Date</th>
-    <th>Beløp</th>
-    <th>Post</th>
-    <th>Beløp</th>
-    <th>Post</th>
-    <th>Saldo</th>
+    <th class="amount">Beløp</th>
+    <th class="text">Debit - Post</th>
+    <th class="amount">Beløp</th>
+    <th class="text">Kredit - Post</th>
+    <th class="amount">Saldo</th>
     <th>Status</th>
-    <th>Ekstra info</th>
+    <th class="text">Ekstra info</th>
     </thead>
     <tbody>
     <?php

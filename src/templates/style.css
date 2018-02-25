@@ -30,6 +30,12 @@ td.amount {
     font-weight: bold;
     text-align: right;
 }
+th.amount {
+    text-align: right;
+}
+th.text {
+    text-align: left;
+}
 td.amount_negative {
     color: red;
 }
@@ -45,6 +51,7 @@ td.budget_diff.amount {
     font-weight: normal;
 }
 
+th,
 td {
     padding: 5px;
 }

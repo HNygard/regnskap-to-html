@@ -7,12 +7,12 @@
     <thead>
     <th>ID</th>
     <th>Date</th>
-    <th>Beløp</th>
-    <th>Post</th>
-    <th>Beløp</th>
-    <th>Post</th>
-    <th>Status</th>
-    <th>Ekstra info</th>
+    <th class="amount">Beløp</th>
+    <th class="text">Debit - Post</th>
+    <th class="amount">Beløp</th>
+    <th class="text">Kredit - Post</th>
+    <th class="text">Status</th>
+    <th class="text">Ekstra info</th>
     </thead>
     <tbody>
     <?php
