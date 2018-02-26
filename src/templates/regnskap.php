@@ -112,7 +112,7 @@ $printAccountingOverview = function (FinancialStatement $statement, $accounting_
         if ($show_budget) {
             foreach ($all_budgets as $budget) {
                 ?>
-                <th><?= $budget->name ?></th>
+                <th colspan="2"><?= $budget->name ?></th>
             <?php
             }
         }

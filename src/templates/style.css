@@ -15,10 +15,10 @@ td.transaction_id {
 
 td.account_posting,
 td.budget {
-    border-left: 1px dashed #CCCCCC;
+    border-left: 1px dashed black;
 }
 table tr td:last-of-type {
-    border-right: 1px dashed #CCCCCC;
+    border-right: 1px dashed black;
 }
 
 td.account_posting .post_name {
