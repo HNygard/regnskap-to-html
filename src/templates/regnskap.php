@@ -89,6 +89,9 @@ $statement->posts[10003] = 'BALANSE';
 foreach ($statement->budgets_per_subject as $budget) {
     $posts = array();
     foreach ($budget->posts as $post) {
+        if (isset($posts[$post->account_number])) {
+            $post->amount += $posts[$post->account_number];
+        }
         $posts[$post->account_number] = $post->amount;
     }
     $sum = $summarizer($posts);
