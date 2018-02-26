@@ -106,8 +106,8 @@ $printAccountingOverview = function (FinancialStatement $statement, $accounting_
     ?>
     <table class="regnskap">
         <thead>
-        <th>Konto</th>
-        <th>Beløp</th>
+        <th class="text">Konto</th>
+        <th class="amount">Beløp</th>
         <?php
         if ($show_budget) {
             foreach ($all_budgets as $budget) {
@@ -174,7 +174,7 @@ $printAccountingOverview = function (FinancialStatement $statement, $accounting_
 
 <h2>Regnskap</h2>
 <?php $printAccountingOverview($statement, $resultat_poster, $show_all_accounts, false, $statement->budgets, null); ?>
-<h2>Balanse</h2>
+<h2 class="page-break-before">Balanse</h2>
 <?php $printAccountingOverview($statement, $balanse_poster, $show_all_accounts, false, $statement->budgets, null); ?>
 <?php
 foreach ($resultat_poster_subject as $subject_key => $posts) {
@@ -185,7 +185,7 @@ foreach ($resultat_poster_subject as $subject_key => $posts) {
             $budgets[] = $budget_per_subject;
         }
     }
-    echo '<h2>Budsjettkontroll - ' . $subject_name[$subject_key] . '</h2>' . chr(10);
+    echo '<h2 class="page-break-before">Budsjettkontroll - ' . $subject_name[$subject_key] . '</h2>' . chr(10);
     ksort($posts);
     $printAccountingOverview($statement, $posts, $show_all_accounts, true, $budgets, $subject_key);
 }

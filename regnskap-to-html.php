@@ -599,8 +599,9 @@ function docSort(AccountingDocument $a, AccountingDocument $b) {
 usort($statement->documents ,'docSort');
 
 // :: Render
+$report_time = time();
 function renderTemplate($php_file, $result_file, FinancialStatement $statement, $parameter = null) {
-    global $statement_directory;
+    global $statement_directory, $report_time;
     echo '[' . $statement->companyName . ' ' . $statement->year . '] - Rendering [' . $php_file . '] to [' . $result_file . '].' . chr(10);
     $relative_path = '.';
     if (strpos($result_file, '/') !== false) {
@@ -613,14 +614,14 @@ function renderTemplate($php_file, $result_file, FinancialStatement $statement, 
         <head>
             <meta charset="UTF-8">
         </head>
-        <h1><?= $statement->companyName ?> - Regnskap <?= $statement->year ?></h1>
+        <h1><?= $statement->companyName ?> - Regnskap <?= $statement->year ?> <small>generert <?= date('H:i:s d.m.Y', $report_time) ?></small></h1>
         <link type="text/css" rel="stylesheet" href="<?= $relative_path ?>/style.css">
-
-
-        <li><a href="<?= $relative_path ?>/transactions_warnings.html">Advarsler</a>
-        <li><a href="<?= $relative_path ?>/transactions_all.html">Alle posteringer</a>
-        <li><a href="<?= $relative_path ?>/regnskap.html">Regnskap</a>
-        <li><a href="<?= $relative_path ?>/regnskap_all.html">Regnskap, alle poster</a>
+        <div class="no-print">
+            <li><a href="<?= $relative_path ?>/transactions_warnings.html">Advarsler</a>
+            <li><a href="<?= $relative_path ?>/transactions_all.html">Alle posteringer</a>
+            <li><a href="<?= $relative_path ?>/regnskap.html">Regnskap</a>
+            <li><a href="<?= $relative_path ?>/regnskap_all.html">Regnskap, alle poster</a>
+        </div>
     <?php
     }
     include __DIR__ . '/src/templates/' . $php_file;

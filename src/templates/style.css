@@ -17,6 +17,9 @@ td.account_posting,
 td.budget {
     border-left: 1px dashed #CCCCCC;
 }
+table tr td:last-of-type {
+    border-right: 1px dashed #CCCCCC;
+}
 
 td.account_posting .post_name {
     color: gray;
@@ -75,7 +78,7 @@ tr.accounting-post-7999 td.budget_diff.amount,
 tr.accounting-post-10002 td,
 tr.accounting-post-10002 td.budget.amount,
 tr.accounting-post-10002 td.budget_diff.amount {
-    padding-bottom: 3em;
+    padding-bottom: 1em;
     font-weight: bold;
 }
 
@@ -116,4 +119,24 @@ a:hover {
     -webkit-box-sizing: border-box;
     -moz-box-sizing: border-box;
     box-sizing: border-box;
+}
+
+
+@media print {
+    .no-print {
+        display: none;
+    }
+}
+
+h1 small {
+    font-size: 14px;
+}
+
+h2 {
+
+    margin: 0;
+}
+
+.page-break-before {
+    page-break-before: always;
 }
