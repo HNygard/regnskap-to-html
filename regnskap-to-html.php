@@ -282,7 +282,8 @@ class AccountingDocument {
     }
 
     function getStatus() {
-        if (count($this->transactions) == 1) {
+        if (count($this->transactions) == 1
+            && ($this->transactions[0]->amount_credit == null || $this->transactions[0]->amount_debit == null)) {
             return 'Mangler mot-postering.';
         }
 
