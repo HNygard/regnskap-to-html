@@ -42,6 +42,9 @@ th.text {
 td.amount_negative {
     color: red;
 }
+td.amount_negative_small {
+    color: #730000;
+}
 
 td.date,
 td.account_posting,

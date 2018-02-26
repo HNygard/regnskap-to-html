@@ -152,7 +152,7 @@ $printAccountingOverview = function (FinancialStatement $statement, $accounting_
                         $budget_diff = $sum - $budget_amount;
                         ?>
                         <td class="budget amount"><?= formatMoney($budget_amount, 'NOK') ?></td>
-                        <td class="budget_diff amount <?= ($budget_diff < 0 ? 'amount_negative' : '') ?>">
+                        <td class="budget_diff amount <?= ($budget_diff < -1000 ? 'amount_negative' : ($budget_diff < 0 ? 'amount_negative_small' : '')) ?>">
                             <?= formatMoney($budget_diff, 'NOK') ?>
                         </td>
                     <?php
