@@ -39,7 +39,7 @@ foreach ($statement->posts as $accounting_post => $accounting_post_name) {
         }
     }
     else {
-        $balanse_poster[$accounting_post] = $sum;
+        $balanse_poster[$accounting_post] = -$sum;
     }
 }
 
@@ -81,6 +81,10 @@ $statement->posts[7999] = 'SUM KOSTNADER';
 $statement->posts[10000] = 'Sum inntekter';
 $statement->posts[10001] = 'Sum kostnader';
 $statement->posts[10002] = 'RESULTAT';
+
+$tmp_balanse = $summarizer($balanse_poster);
+$balanse_poster[10003] = $tmp_balanse['sum_inntekter'] + $tmp_balanse['sum_kostnader'] + $tmp_balanse['resultat'];
+$statement->posts[10003] = 'BALANSE';
 
 foreach ($statement->budgets_per_subject as $budget) {
     $posts = array();
