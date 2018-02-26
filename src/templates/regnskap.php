@@ -185,9 +185,15 @@ foreach ($resultat_poster_subject as $subject_key => $posts) {
             $budgets[] = $budget_per_subject;
         }
     }
+    if ($subject_key == '') {
+        echo '<div class="no-print">';
+    }
     echo '<h2 class="page-break-before">Budsjettkontroll - ' . $subject_name[$subject_key] . '</h2>' . chr(10);
     ksort($posts);
     $printAccountingOverview($statement, $posts, $show_all_accounts, true, $budgets, $subject_key);
+    if ($subject_key == '') {
+        echo '</div>';
+    }
 }
 ?>
 
