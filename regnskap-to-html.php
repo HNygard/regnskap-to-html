@@ -610,6 +610,9 @@ function renderTemplate($php_file, $result_file, FinancialStatement $statement, 
     ob_start();
     if (!str_ends_with($php_file, '.css')) {
         ?>
+        <head>
+            <meta charset="UTF-8">
+        </head>
         <h1><?= $statement->companyName ?> - Regnskap <?= $statement->year ?></h1>
         <link type="text/css" rel="stylesheet" href="<?= $relative_path ?>/style.css">
 
