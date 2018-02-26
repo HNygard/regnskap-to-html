@@ -26,14 +26,59 @@ function getFileListInDirectory($dir, &$results = array()) {
 
 require_once __DIR__ . '/src/common.php';
 
+// :: Config
+if (!file_exists($statement_directory . '/config.json')) {
+    echo chr(10);
+    echo chr(10);
+    echo '========> Missing config.json' . chr(10);
+    echo $statement_directory . '/config.json' . chr(10);
+    echo chr(10);
+    echo chr(10);
+    $config = new AccountingConfig();
+    $config->companyName = 'My Company';
+    $config->year = '1971';
+
+    $config_account = new AccountingConfigAccount();
+    $config_account->name = 'My Bank Account';
+    $config_account->id = 'bank-123123123';
+    $config_account->accounting_post = '1920';
+    $config->accounts = array($config_account);
+
+    $post = new AccountingConfigAccountingPost();
+    $post->account_number = '1234';
+    $post->name = 'Post name';
+    $config->accounting_posts = array($post);
+
+    echo json_encode($config, JSON_PRETTY_PRINT);
+    echo chr(10);
+    echo chr(10);
+    exit;
+}
+/* @var AccountingConfig $config */
+$config = json_decode(file_get_contents($statement_directory . '/config.json'));
+if ($config == null) {
+    echo 'Unable to read config.json' . chr(10);
+    echo json_last_error_msg() . chr(10);
+    exit;
+}
+
 // :: Collect the right files
 $json_files = array();
 $csv_files = array();
+$manual_transaction_files = array();
 foreach ($files as $file) {
-    if (str_ends_with(strtolower($file), '.json')
+    foreach ($config->ignoreFiles as $ignore_this_file) {
+        if (str_ends_with($file, $ignore_this_file)) {
+            continue 2;
+        }
+    }
+
+    if (str_ends_with($file, 'manual-transactions.json')) {
+        $manual_transaction_files[] = $file;
+    }
+    elseif (str_ends_with(strtolower($file), '.json')
         && !str_ends_with($file, 'account-transactions.json')
         && !str_ends_with($file, 'config.json')
-        && !str_ends_with($file, 'manual-transactions.json')
     ) {
         $json_files[] = $file;
     }
@@ -50,6 +95,7 @@ if (!file_exists($statement_directory)) {
 class AccountingConfig {
     var $companyName;
     var $year;
+    var $ignoreFiles = array();
     /* @var AccountingConfigAccount[] $accounts */
     var $accounts = array();
     /* @var AccountingConfigAccountingPost[] $accounting_posts */
@@ -103,34 +149,6 @@ class AccountingConfigBudgetPost {
         $this->amount = $amount;
         $this->comment = '';
     }
-}
-
-if (!file_exists($statement_directory . '/config.json')) {
-    echo chr(10);
-    echo chr(10);
-    echo '========> Missing config.json' . chr(10);
-    echo $statement_directory . '/config.json' . chr(10);
-    echo chr(10);
-    echo chr(10);
-    $config = new AccountingConfig();
-    $config->companyName = 'My Company';
-    $config->year = '1971';
-
-    $config_account = new AccountingConfigAccount();
-    $config_account->name = 'My Bank Account';
-    $config_account->id = 'bank-123123123';
-    $config_account->accounting_post = '1920';
-    $config->accounts = array($config_account);
-
-    $post = new AccountingConfigAccountingPost();
-    $post->account_number = '1234';
-    $post->name = 'Post name';
-    $config->accounting_posts = array($post);
-
-    echo json_encode($config, JSON_PRETTY_PRINT);
-    echo chr(10);
-    echo chr(10);
-    exit;
 }
 
 /**
@@ -326,12 +344,6 @@ class AccountingTransaction {
     }
 }
 
-$config = json_decode(file_get_contents($statement_directory . '/config.json'));
-if ($config == null) {
-    echo 'Unable to read config.json' . chr(10);
-    echo json_last_error_msg() . chr(10);
-    exit;
-}
 $statement = new FinancialStatement($config);
 
 // :: Get data - Bank accounts over API
@@ -428,6 +440,7 @@ class ManualTransactionsFile {
 class ManualTransaction {
     var $id;
     var $date;
+    var $timestamp;
     var $accounting_post_debit;
     var $accounting_post_credit;
     var $accounting_subject_debit;
@@ -442,30 +455,38 @@ class ManualTransaction {
 }
 
 /* @var ManualTransactionsFile $manual_transactions */
-$manual_transactions = json_decode(file_get_contents($statement_directory . '/manual-transactions.json'));
-if ($manual_transactions == null) {
-    echo 'Unable to read manual_transactions.json' . chr(10);
-    echo json_last_error_msg() . chr(10);
-    exit;
-}
-foreach ($manual_transactions->transactions as $i => $manual_transaction) {
-    $is_debit = (isset($manual_transaction->accounting_post_debit));
-    $is_credit = (isset($manual_transaction->accounting_post_credit));
-    $statement->addTransaction(new AccountingTransaction(
-        $manual_transaction->id,
-        mktime(0, 0, 0, substr($manual_transaction->date, 5, 2), substr($manual_transaction->date, 8, 2), substr($manual_transaction->date, 0, 4)),
-        ($is_debit ? $manual_transaction->accounting_post_debit : null),
-        ($is_debit ? $manual_transaction->amount_debit : null),
-        ($is_debit ? $manual_transaction->currency_debit : null),
-        ($is_credit ? $manual_transaction->accounting_post_credit : null),
-        ($is_credit ? $manual_transaction->amount_credit : null),
-        ($is_credit ? $manual_transaction->currency_credit : null),
-        '',
-        ($is_debit ? $manual_transaction->accounting_subject_debit : null),
-        ($is_credit ? $manual_transaction->accounting_subject_credit : null),
-        ($is_debit ? $manual_transaction->comment_debit : null),
-        ($is_credit ? $manual_transaction->comment_credit : null)
-    ));
+foreach ($manual_transaction_files as $file) {
+    $manual_transactions = json_decode(file_get_contents($file));
+    if ($manual_transactions == null) {
+        echo 'Unable to read manual_transactions.json' . chr(10);
+        echo json_last_error_msg() . chr(10);
+        exit;
+    }
+    foreach ($manual_transactions->transactions as $i => $manual_transaction) {
+        $is_debit = (isset($manual_transaction->accounting_post_debit));
+        $is_credit = (isset($manual_transaction->accounting_post_credit));
+        if (isset($manual_transaction->timestamp)) {
+            $timestamp = $manual_transaction->timestamp;
+        }
+        else {
+            $timestamp = mktime(0, 0, 0, substr($manual_transaction->date, 5, 2), substr($manual_transaction->date, 8, 2), substr($manual_transaction->date, 0, 4));
+        }
+        $statement->addTransaction(new AccountingTransaction(
+            $manual_transaction->id,
+            $timestamp,
+            ($is_debit ? $manual_transaction->accounting_post_debit : null),
+            ($is_debit ? $manual_transaction->amount_debit : null),
+            ($is_debit ? $manual_transaction->currency_debit : null),
+            ($is_credit ? $manual_transaction->accounting_post_credit : null),
+            ($is_credit ? $manual_transaction->amount_credit : null),
+            ($is_credit ? $manual_transaction->currency_credit : null),
+            '',
+            ($is_debit ? $manual_transaction->accounting_subject_debit : null),
+            ($is_credit ? $manual_transaction->accounting_subject_credit : null),
+            ($is_debit ? $manual_transaction->comment_debit : null),
+            ($is_credit ? $manual_transaction->comment_credit : null)
+        ));
+    }
 }
 
 // :: Geta data - JSON files from https://github.com/HNygard/renamefile-server-nodejs
@@ -503,7 +524,7 @@ foreach ($json_files as $file) {
     if (empty($obj->account_transaction_id)) {
         echo file_get_contents($file);
         var_dump($obj);
-        throw new Exception('Missing account_transaction_id. Unable to proceed.');
+        throw new Exception('Missing account_transaction_id. Unable to proceed with: ' . str_replace($statement_directory, '', $file));
     }
 
     $document = $statement->getDocument($obj->account_transaction_id, $obj);
