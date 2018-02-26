@@ -242,9 +242,11 @@ class AccountingDocument {
     }
 
     function addTransaction(AccountingTransaction $transaction) {
+        global $statement;
         $this->transactions[] = $transaction;
 
-        if ($transaction->amount_debit != null) {
+        if ($transaction->amount_debit != null && isset($statement->posts[$transaction->accounting_post_debit])) {
+            // -> Debit amount present and on valid account
             $this->sum_debit += $transaction->amount_debit;
         }
 
@@ -256,7 +258,8 @@ class AccountingDocument {
             throw new Exception('Multi currency not implemented.');
         }
 
-        if ($transaction->amount_credit != null) {
+        if ($transaction->amount_credit != null && isset($statement->posts[$transaction->accounting_post_credit])) {
+            // -> Credit amount present and on valid account
             $this->sum_credit += $transaction->amount_credit;
         }
     }
@@ -285,6 +288,16 @@ class AccountingDocument {
         if (count($this->transactions) == 1
             && ($this->transactions[0]->amount_credit == null || $this->transactions[0]->amount_debit == null)) {
             return 'Mangler mot-postering.';
+        }
+
+        global $statement;
+        foreach ($this->transactions as $transaction) {
+            if ($transaction->amount_credit != null && !isset($statement->posts[$transaction->accounting_post_credit])) {
+                return 'Ugyldig credit post [' . $transaction->accounting_post_credit .'].';
+            }
+            if ($transaction->amount_debit != null && !isset($statement->posts[$transaction->accounting_post_debit])) {
+                return 'Ugyldig debit post [' . $transaction->accounting_post_debit .'].';
+            }
         }
 
         if ($this->getSumDebit() != $this->getSumCredit()) {
