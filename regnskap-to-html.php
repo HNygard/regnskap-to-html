@@ -117,6 +117,7 @@ class AccountingConfigAccount {
 class AccountingConfigAccountingPost {
     var $account_number;
     var $name;
+    var $subject_result;
 }
 
 class AccountingConfigAccountingSubject {
@@ -158,6 +159,7 @@ class FinancialStatement {
     /* @var AccountingDocument[] $documents */
     var $documents = array();
     var $posts = array();
+    var $post_sum_subjects = array();
     /* @var AccountingConfigAccountingSubject[] $subjects */
     var $subjects = array();
     /* @var AccountingConfigBudget[] $budgets */
@@ -178,6 +180,9 @@ class FinancialStatement {
 
         foreach ($config->accounting_posts as $post) {
             $this->posts[$post->account_number] = $post->name;
+            if (isset($post->subject_result)) {
+                $this->post_sum_subjects[$post->account_number] = $post->subject_result;
+            }
         }
 
         $this->subjects = array(new AccountingConfigAccountingSubject('', 'Ingen'));

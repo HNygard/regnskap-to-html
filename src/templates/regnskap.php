@@ -105,6 +105,28 @@ foreach ($statement->budgets_per_subject as $budget) {
 ksort($resultat_poster);
 ksort($balanse_poster);
 
+// :: Write sub results into subject results
+foreach ($statement->post_sum_subjects as $account_number => $subject_result) {
+    foreach ($statement->budgets_per_subject as $budget) {
+        foreach ($budget->posts as $post) {
+            if ($post->account_number == $account_number) {
+                // -> The right account number in a budget.
+
+                // :: Get the result amount
+                $subject_result_amount = $summarizer($resultat_poster_subject[$subject_result])['resultat'];
+
+                // :: Write the subject result amount into the subject wanting it.
+                $resultat_poster_subject[$budget->accounting_subject][$account_number] = $subject_result_amount;
+            }
+        }
+    }
+}
+
+// :: Recalculate results
+foreach ($resultat_poster_subject as $subject_key => $posts) {
+    $resultat_poster_subject[$subject_key] = $append_sum($summarizer, $posts);
+}
+
 $printAccountingOverview = function (FinancialStatement $statement, $accounting_posts, $show_all_accounts, $show_budget, $all_budgets, $accounting_subject) {
     ?>
     <table class="regnskap">
@@ -181,7 +203,6 @@ $printAccountingOverview = function (FinancialStatement $statement, $accounting_
 <?php $printAccountingOverview($statement, $balanse_poster, $show_all_accounts, false, $statement->budgets, null); ?>
 <?php
 foreach ($resultat_poster_subject as $subject_key => $posts) {
-    $posts = $append_sum($summarizer, $posts);
     $budgets = array();
     foreach($statement->budgets_per_subject as $budget_per_subject) {
         if ($budget_per_subject->accounting_subject == $subject_key) {
