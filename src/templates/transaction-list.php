@@ -1,7 +1,28 @@
 <?php
 /* @var FinancialStatement $statement */
 /* @var AccountingDocument[] $documents */
+
+$errors = array();
+foreach ($documents as $document2) {
+    $status = $document2->getStatus();
+    if (!isset($errors[$status])) {
+        $errors[$status] = 0;
+    }
+    $errors[$status]++;
+
+}
 ?>
+
+<table style="border-collapse: collapse">
+    <?php foreach ($errors as $message => $count) { ?>
+        <tr>
+            <td style="border: 1px solid black;"><?= $message ?></td>
+            <td style="border: 1px solid black;"><?= $count ?></td>
+        </tr>
+    <?php } ?>
+</table>
+<br><br>
+
 
 <table>
     <thead>
