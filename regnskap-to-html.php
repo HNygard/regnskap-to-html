@@ -27,11 +27,11 @@ function getFileListInDirectory($dir, &$results = array()) {
 require_once __DIR__ . '/src/common.php';
 
 // :: Config
-if (!file_exists($statement_directory . '/config.json')) {
+if (!file_exists($current_directory . '/config.json')) {
     echo chr(10);
     echo chr(10);
     echo '========> Missing config.json' . chr(10);
-    echo $statement_directory . '/config.json' . chr(10);
+    echo $current_directory . '/config.json' . chr(10);
     echo chr(10);
     echo chr(10);
     $config = new AccountingConfig();
@@ -55,7 +55,7 @@ if (!file_exists($statement_directory . '/config.json')) {
     exit;
 }
 /* @var AccountingConfig $config */
-$config = json_decode(file_get_contents($statement_directory . '/config.json'));
+$config = json_decode(file_get_contents($current_directory . '/config.json'));
 if ($config == null) {
     echo 'Unable to read config.json' . chr(10);
     echo json_last_error_msg() . chr(10);
@@ -77,7 +77,7 @@ foreach ($files as $file) {
         $manual_transaction_files[] = $file;
     }
     elseif (str_ends_with(strtolower($file), '.json')
-        && !str_ends_with($file, 'account-transactions.json')
+        && !str_ends_with($file, 'account-transactions-cache.json')
         && !str_ends_with($file, 'config.json')
     ) {
         $json_files[] = $file;
@@ -368,16 +368,17 @@ $statement = new FinancialStatement($config);
 // :: Get data - Bank accounts over API
 $year_start = mktime(0, 0, 0, 1, 1, $statement->year);
 $year_end = mktime(0, 0, 0, 12, 31, $statement->year);
-if (!file_exists($statement_directory . '/account-transactions.json')) {
+$account_transactions_file = $current_directory . '/account-transactions-cache.json';
+if (!file_exists($account_transactions_file)) {
     $bank_accounts = array();
     foreach ($statement->accounts as $account) {
         $bank_accounts[] = $account->id;
     }
     $api_transactions = getUrl('http://localhost:13080/account_transactions_api/' . implode(',', $bank_accounts) . '/' . $year_start . '/' . $year_end)['body'];
-    file_put_contents($statement_directory . '/account-transactions.json', $api_transactions);
+    file_put_contents($account_transactions_file, $api_transactions);
 }
 else {
-    $api_transactions = file_get_contents($statement_directory . '/account-transactions.json');
+    $api_transactions = file_get_contents($account_transactions_file);
 }
 $api_transactions_per_account = json_decode($api_transactions);
 if ($api_transactions_per_account == null || count($api_transactions_per_account) == 0) {
@@ -543,7 +544,7 @@ foreach ($json_files as $file) {
     if (empty($obj->account_transaction_id)) {
         echo file_get_contents($file);
         var_dump($obj);
-        throw new Exception('Missing account_transaction_id. Unable to proceed with: ' . str_replace($statement_directory, '', $file));
+        throw new Exception('Missing account_transaction_id. Unable to proceed with: ' . str_replace($current_directory, '', $file));
     }
 
     $document = $statement->getDocument($obj->account_transaction_id, $obj);
